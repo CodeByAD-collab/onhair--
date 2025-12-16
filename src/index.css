@@ -1,0 +1,279 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* =========================================
+   1. VARIABLES & THÈMES (DARK MODE)
+   ========================================= */
+:root {
+  /* LIGHT MODE (Défaut) */
+  --bg-main: #F3F4F6;
+  --bg-card: #ffffff;
+  --text-main: #111827;
+  --text-muted: #6B7280;
+  --border-color: #E5E7EB;
+  --primary-color: #10B981; /* Vert Fresha */
+  --primary-light: #ECFDF5;
+  --hover-bg: #F9FAFB;
+  --input-bg: white;
+  
+  /* Sidebar Admin */
+  --sidebar-bg: #111827;
+  --sidebar-text: white;
+}
+
+[data-theme="dark"] {
+  /* DARK MODE */
+  --bg-main: #111827;       
+  --bg-card: #1F2937;       
+  --text-main: #F9FAFB;     
+  --text-muted: #9CA3AF;    
+  --border-color: #374151;  
+  --primary-color: #34D399; 
+  --primary-light: #064E3B; 
+  --hover-bg: #374151;
+  --input-bg: #111827;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* =========================================
+   2. ADMIN DASHBOARD LAYOUT (SIDEBAR)
+   ========================================= */
+.admin-layout {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  background-color: #F3F4F6; /* Force le fond gris en admin */
+}
+
+/* SIDEBAR PRO (Noir) */
+.sidebar {
+  width: 260px;
+  background-color: var(--sidebar-bg);
+  color: var(--sidebar-text);
+  display: flex;
+  flex-direction: column;
+  padding: 25px;
+  box-shadow: 4px 0 10px rgba(0,0,0,0.05);
+  z-index: 20;
+}
+
+.admin-content {
+  flex: 1;
+  background-color: #F9FAFB;
+  padding: 30px;
+  overflow-y: auto;
+  position: relative;
+  color: #1F2937; /* Force le texte sombre en admin */
+}
+
+/* MENU ITEMS */
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  border-radius: 12px;
+  cursor: pointer;
+  color: #9CA3AF;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.menu-item:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.menu-item.active {
+  background-color: #EC4899; /* Rose OnHair */
+  color: white;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(236, 72, 153, 0.3);
+}
+
+/* TABLEAU ADMIN */
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.admin-table th {
+  text-align: left;
+  color: #6B7280;
+  font-size: 12px;
+  text-transform: uppercase;
+  padding: 15px;
+  border-bottom: 1px solid #E5E7EB;
+  background: #F9FAFB;
+}
+
+.admin-table td {
+  padding: 15px;
+  border-bottom: 1px solid #F3F4F6;
+  font-size: 14px;
+  color: #1F2937;
+}
+
+.btn-delete {
+  background: white; border: 1px solid #E5E7EB;
+  padding: 6px; border-radius: 8px; cursor: pointer; color: #EF4444;
+}
+.btn-delete:hover { background: #FEF2F2; }
+
+/* =========================================
+   3. CALENDRIER (Big Calendar Overrides)
+   ========================================= */
+.rbc-calendar { background: white; border-radius: 16px; color: #1F2937; }
+
+.rbc-header {
+  padding: 16px 0 !important;
+  font-weight: 700 !important;
+  font-size: 13px !important;
+  text-transform: uppercase;
+  color: #6B7280;
+  border-bottom: 1px solid #F3F4F6 !important;
+  background-color: white;
+}
+
+.rbc-time-view { border: none !important; }
+.rbc-day-slot .rbc-time-slot { border-top: 1px solid #F9FAFB !important; }
+.rbc-day-bg + .rbc-day-bg { border-left: 1px solid #F3F4F6 !important; }
+.rbc-timeslot-group { min-height: auto !important; border-bottom: 1px solid #F3F4F6 !important; }
+.rbc-time-gutter .rbc-timeslot-group { border: none !important; font-size: 12px; color: #9CA3AF; display: flex; align-items: center; justify-content: center; }
+.rbc-current-time-indicator { background-color: #EC4899 !important; height: 2px !important; }
+
+/* BOUTONS TOOLBAR */
+.rbc-toolbar {
+  margin-bottom: 20px !important; padding: 10px;
+  background: white; border-radius: 16px; border: 1px solid #E5E7EB;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.rbc-toolbar button {
+  border: none !important; background: transparent !important;
+  font-weight: 600 !important; color: #4B5563 !important;
+  padding: 8px 16px !important; border-radius: 20px !important;
+}
+.rbc-toolbar button.rbc-active {
+  background-color: #111827 !important; color: white !important;
+}
+
+/* EVENTS (RDV) */
+.rbc-event {
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+  border: none !important;
+  border-left: 3px solid rgba(0,0,0,0.2) !important;
+  padding: 2px 6px !important; 
+  font-size: 11px !important; 
+  font-weight: 600 !important;
+  line-height: 1.4 !important;
+  border-radius: 4px !important;
+}
+
+/* AGENDA VIEW (Liste propre) */
+.rbc-agenda-view table { border: none !important; }
+.rbc-agenda-view thead { display: none; }
+.rbc-agenda-view tbody tr { border-bottom: 1px solid #F3F4F6 !important; }
+.rbc-agenda-view td { padding: 15px 20px !important; vertical-align: middle !important; background: white !important; }
+.rbc-agenda-date-cell { font-weight: 700 !important; color: #111827 !important; }
+.rbc-agenda-time-cell { color: #6B7280 !important; }
+.rbc-agenda-event-cell { color: #111827 !important; }
+
+
+/* =========================================
+   4. CLIENT BOOKING WIZARD (Côté Client)
+   ========================================= */
+.booking-wrapper {
+  min-height: 100vh;
+  background-color: var(--bg-main);
+  display: flex; justify-content: center; align-items: center; padding: 20px;
+  transition: all 0.3s ease;
+}
+
+.booking-card {
+  background: var(--bg-card);
+  width: 100%; max-width: 800px;
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  border: 1px solid var(--border-color);
+  overflow: hidden; display: flex; flex-direction: column;
+}
+
+.wizard-header {
+  padding: 30px; border-bottom: 1px solid var(--border-color);
+  text-align: center; position: relative;
+}
+
+.toggle-theme-btn {
+  position: absolute; top: 20px; right: 20px;
+  background: var(--bg-main); border: 1px solid var(--border-color);
+  color: var(--text-main); padding: 8px; border-radius: 50%; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.step-indicators { display: flex; justify-content: center; gap: 10px; margin-top: 15px; }
+.step-dot { width: 10px; height: 10px; border-radius: 50%; background-color: var(--border-color); }
+.step-dot.active { background-color: var(--primary-color); transform: scale(1.2); }
+
+.wizard-body { padding: 30px; min-height: 400px; }
+.section-title { font-size: 22px; font-weight: 700; margin-bottom: 20px; color: var(--text-main); }
+
+/* Services Grid */
+.services-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
+.service-card {
+  border: 1px solid var(--border-color); border-radius: 12px; padding: 15px;
+  cursor: pointer; background: var(--bg-card); transition: all 0.2s;
+}
+.service-card:hover { border-color: var(--primary-color); background-color: var(--hover-bg); }
+.service-card.selected { border-color: var(--primary-color); background-color: var(--primary-light); border-width: 2px; }
+
+.s-name { font-weight: 600; color: var(--text-main); }
+.s-price { font-weight: 700; color: var(--primary-color); float: right; }
+.s-time { font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 4px; }
+
+/* Inputs & Buttons */
+.modern-input, select {
+  width: 100%; padding: 12px; background-color: var(--input-bg);
+  border: 1px solid var(--border-color); color: var(--text-main);
+  border-radius: 8px; outline: none; box-sizing: border-box;
+}
+.time-btn {
+  padding: 10px; border: 1px solid var(--border-color); border-radius: 8px;
+  background: var(--bg-card); color: var(--text-main); font-weight: 600; cursor: pointer;
+}
+.time-btn.selected { background-color: var(--primary-color); color: white; border-color: var(--primary-color); }
+
+.wizard-footer {
+  padding: 20px 30px; border-top: 1px solid var(--border-color);
+  display: flex; justify-content: space-between;
+}
+.btn-next { background-color: var(--primary-color); color: white; padding: 12px 30px; border-radius: 30px; font-weight: 600; border: none; cursor: pointer; }
+.btn-back { background: transparent; border: 1px solid var(--border-color); color: var(--text-main); padding: 12px 20px; border-radius: 30px; font-weight: 600; cursor: pointer; }
+
+/* POPUP MODAL (Admin) */
+.modal-overlay {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px);
+  display: flex; justify-content: center; align-items: center; z-index: 1000;
+}
+.modal-content {
+  background: white; padding: 30px; border-radius: 20px; width: 420px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  color: #1F2937;
+}
+.btn-save {
+  background: black; color: white; padding: 10px 20px;
+  border-radius: 30px; font-weight: 600; cursor: pointer; border: none;
+  display: inline-flex; align-items: center; gap: 8px;
+}
