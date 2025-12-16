@@ -45,13 +45,13 @@ function App() {
   // Fetch Staff and Bookings on Load
   useEffect(() => {
     // 1. Get Staff
-    fetch('http://localhost:3000/api/staff')
+    fetch('https://onhair.onrender.com/api/staff')
         .then(res => res.json())
         .then(data => { if(data.data) setStaffList(data.data); })
         .catch(err => console.error("Erreur staff", err));
 
     // 2. Get All Bookings (to check availability)
-    fetch('http://localhost:3000/api/bookings')
+    fetch('https://onhair.onrender.com/api/bookings')
         .then(res => res.json())
         .then(data => { if(data.data) setExistingBookings(data.data); })
         .catch(err => console.error("Erreur bookings", err));
@@ -98,7 +98,7 @@ function App() {
     };
 
     try {
-      const res = await fetch('http://localhost:3000/api/bookings', {
+      const res = await fetch('https://onhair.onrender.com/api/bookings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(bookingData)

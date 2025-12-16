@@ -28,7 +28,7 @@ export default function Planning({ onBack, role }) {
 
     const loadData = async () => {
         try {
-            const staffRes = await fetch('http://localhost:3000/api/staff');
+            const staffRes = await fetch('https://onhair.onrender.com/api/staff');
             const staffJson = await staffRes.json();
             const staffList = (staffJson && staffJson.data) ? staffJson.data : [];
             
@@ -40,7 +40,7 @@ export default function Planning({ onBack, role }) {
             }));
             setResources(myStaffColumns);
 
-            const bookRes = await fetch('http://localhost:3000/api/bookings');
+            const bookRes = await fetch('https://onhair.onrender.com/api/bookings');
             const bookData = await bookRes.json();
             const rawBookings = (bookData && bookData.data) ? bookData.data : [];
 
@@ -64,7 +64,7 @@ export default function Planning({ onBack, role }) {
 
     const handleCreateBooking = async (formData) => {
         try {
-            await fetch('http://localhost:3000/api/bookings', {
+            await fetch('https://onhair.onrender.com/api/bookings', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name: formData.clientName, phone: formData.phone, service_name: formData.service, staff: formData.staff, date: formData.date, time: formData.time, price: "0", status: "confirmed" })
             });
@@ -77,7 +77,7 @@ export default function Planning({ onBack, role }) {
         const updatedEvents = events.map(ev => ev.id == eventId ? { ...ev, start: newStart, end: moment(newStart).add(moment(ev.end).diff(ev.start), 'ms').toDate(), resourceId: newStaffId } : ev);
         setEvents(updatedEvents);
         try {
-            await fetch(`http://localhost:3000/api/bookings/${eventId}`, {
+            await fetch(`https://onhair.onrender.com/api/bookings/${eventId}`, {
                 method: 'PATCH', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ date: moment(newStart).format('YYYY-MM-DD'), time: moment(newStart).format('HH:mm'), staff: newStaffId })
             });
@@ -85,7 +85,7 @@ export default function Planning({ onBack, role }) {
     };
 
     const handleDeleteEvent = async (id) => {
-        try { await fetch(`http://localhost:3000/api/bookings/${id}`, { method: 'DELETE' }); setSelectedEvent(null); loadData(); } catch (err) { alert("Erreur suppression"); }
+        try { await fetch(`https://onhair.onrender.com/api/bookings/${id}`, { method: 'DELETE' }); setSelectedEvent(null); loadData(); } catch (err) { alert("Erreur suppression"); }
     };
 
     return (

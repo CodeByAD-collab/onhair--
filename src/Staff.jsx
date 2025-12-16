@@ -11,7 +11,7 @@ export default function Staff({ bookings = [] }) {
     }, []);
 
     const fetchStaff = () => {
-        fetch('http://localhost:3000/api/staff')
+        fetch('https://onhair.onrender.com/api/staff')
             .then(res => res.json())
             .then(data => {
                 setStaffList(data.data || []);
@@ -21,7 +21,7 @@ export default function Staff({ bookings = [] }) {
 
     const handleAddStaff = (e) => {
         e.preventDefault();
-        fetch('http://localhost:3000/api/staff', {
+        fetch('https://onhair.onrender.com/api/staff', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(newStaff)
@@ -38,7 +38,7 @@ export default function Staff({ bookings = [] }) {
     const handleDeleteStaff = (id, name) => {
         if(!window.confirm(`Voulez-vous vraiment supprimer ${name} ?`)) return;
         
-        fetch(`http://localhost:3000/api/staff/${id}`, { method: 'DELETE' })
+        fetch(`https://onhair.onrender.com/api/staff/${id}`, { method: 'DELETE' })
             .then(() => fetchStaff());
     };
 

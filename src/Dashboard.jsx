@@ -8,7 +8,7 @@ export default function Dashboard() {
 
     const loadDashboardData = async () => {
         try {
-            const res = await fetch('http://localhost:3000/api/bookings');
+            const res = await fetch('https://onhair.onrender.com/api/bookings');
             const data = await res.json();
             const bookings = data.data || [];
             const todayStr = new Date().toISOString().split('T')[0];

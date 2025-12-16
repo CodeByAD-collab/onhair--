@@ -32,7 +32,7 @@ export default function Caisse() {
 
     const loadData = async () => {
         try {
-            const res = await fetch('http://localhost:3000/api/expenses');
+            const res = await fetch('https://onhair.onrender.com/api/expenses');
             const json = await res.json();
             const data = json.data || [];
             
@@ -85,7 +85,7 @@ export default function Caisse() {
         };
 
         try {
-            await fetch('http://localhost:3000/api/expenses', {
+            await fetch('https://onhair.onrender.com/api/expenses', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(newTransaction)
@@ -100,7 +100,7 @@ export default function Caisse() {
     const handleDelete = async (id) => {
         if (!window.confirm("Supprimer cette transaction ?")) return;
         try {
-            await fetch(`http://localhost:3000/api/expenses/${id}`, { method: 'DELETE' });
+            await fetch(`https://onhair.onrender.com/api/expenses/${id}`, { method: 'DELETE' });
             loadData();
         } catch (err) { alert("Erreur"); }
     };

@@ -47,9 +47,9 @@ export default function Clients() {
     const loadAllData = async () => {
         try {
             const [clientsRes, bookingsRes, staffRes] = await Promise.all([
-                fetch('http://localhost:3000/api/clients'),
-                fetch('http://localhost:3000/api/bookings'),
-                fetch('http://localhost:3000/api/staff')
+                fetch('https://onhair.onrender.com/api/clients'),
+                fetch('https://onhair.onrender.com/api/bookings'),
+                fetch('https://onhair.onrender.com/api/staff')
             ]);
             const clientsData = await clientsRes.json();
             const bookingsData = await bookingsRes.json();
@@ -75,7 +75,7 @@ export default function Clients() {
 
     const handleSaveNote = async () => {
         try {
-            await fetch(`http://localhost:3000/api/bookings/${editingNoteId}/notes`, {
+            await fetch(`https://onhair.onrender.com/api/bookings/${editingNoteId}/notes`, {
                 method: 'PATCH', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ notes: noteText })
             });
@@ -86,7 +86,7 @@ export default function Clients() {
     };
 
     const handleSaveClient = async (clientData) => {
-        const url = clientData.id ? `http://localhost:3000/api/clients/${clientData.id}` : 'http://localhost:3000/api/clients';
+        const url = clientData.id ? `https://onhair.onrender.com/api/clients/${clientData.id}` : 'https://onhair.onrender.com/api/clients';
         const method = clientData.id ? 'PUT' : 'POST';
         
         try {
@@ -108,7 +108,7 @@ export default function Clients() {
         if (!selectedClient) return;
         if (!window.confirm(`Supprimer ${selectedClient.prenom} ${selectedClient.nom} ?`)) return;
         try {
-            await fetch(`http://localhost:3000/api/clients/${selectedClient.id}`, { method: 'DELETE' });
+            await fetch(`https://onhair.onrender.com/api/clients/${selectedClient.id}`, { method: 'DELETE' });
             setSelectedClient(null);
             loadAllData();
         } catch (err) { alert("Erreur suppression."); }
@@ -117,7 +117,7 @@ export default function Clients() {
     const handleCreateVisit = async (formData) => {
         try {
             const newBooking = { name: formData.clientName, phone: formData.phone, service_name: formData.service, staff: formData.staff, date: formData.date, time: formData.time };
-            const response = await fetch('http://localhost:3000/api/bookings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newBooking) });
+            const response = await fetch('https://onhair.onrender.com/api/bookings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newBooking) });
             if (!response.ok) throw new Error("Erreur création.");
             
             setIsVisitModalOpen(false);
