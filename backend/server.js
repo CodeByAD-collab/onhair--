@@ -188,4 +188,37 @@ app.delete('/api/staff/:id', async (req, res) => {
     res.json({ message: "deleted" });
 });
 
+app.get('/api/expenses', async (req, res) => {
+    try {
+        const { rows } = await pool.query("SELECT * FROM expenses ORDER BY date DESC");
+        res.json({ data: rows });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// Ajouter une dépense
+app.post('/api/expenses', async (req, res) => {
+    try {
+        const { category, name, amount, date } = req.body;
+        await pool.query(
+            "INSERT INTO expenses (category, name, amount, date) VALUES ($1, $2, $3, $4)",
+            [category, name, amount, date]
+        );
+        res.json({ message: "Expense added" });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// Supprimer une dépense
+app.delete('/api/expenses/:id', async (req, res) => {
+    try {
+        await pool.query("DELETE FROM expenses WHERE id = $1", [req.params.id]);
+        res.json({ message: "deleted" });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
