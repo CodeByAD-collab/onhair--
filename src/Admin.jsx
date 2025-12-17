@@ -39,7 +39,8 @@ export default function Admin() {
         if (userEmail === 'onhairmaroc@gmail.com' && userPass === 'onhair2025') {
             setRole('superadmin');
             setCurrentUser('Direction');
-            setViewMode('dashboard');
+            // MODIFIED: Changed from 'dashboard' to 'planning' so calendar opens first
+            setViewMode('planning'); 
             setIsLoggedIn(true);
         } 
         else if (userEmail === 'nezhaelghazouani829@gmail.com' && userPass === 'nezha2025') {
