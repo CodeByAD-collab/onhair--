@@ -19,42 +19,85 @@ export default function Planning({ onBack, role }) {
 
     const loadData = useCallback(async (dateToLoad) => {
         try {
-            const staffRes = await fetch('https://onhair.onrender.com/api/staff');
+            // Utilisation de localhost au lieu de onrender
+            const staffRes = await fetch('http://localhost:3000/api/staff');
             const staffJson = await staffRes.json();
             const staffList = (staffJson?.data) ? staffJson.data : [];
             const validStaff = staffList.filter(s => s.name && !s.name.toUpperCase().includes("ASSIGNÉ"));
-            const myStaffColumns = validStaff.map(s => ({ id: s.name, title: s.name, role: s.special, emoji: (s.special?.toLowerCase().includes('color')) ? '🎨' : '👤', color: s.color || '#EC4899' }));
+            const myStaffColumns = validStaff.map(s => ({ 
+                id: s.name, 
+                title: s.name, 
+                role: s.special, 
+                emoji: (s.special?.toLowerCase().includes('color')) ? '🎨' : '👤', 
+                color: s.color || '#EC4899' 
+            }));
             setResources(myStaffColumns);
+
             const formattedDate = moment(dateToLoad).format('YYYY-MM-DD');
+            // Utilisation de localhost
             const bookRes = await fetch(`https://onhair.onrender.com/api/bookings?date=${formattedDate}`);
             const bookData = await bookRes.json();
             const rawBookings = (bookData?.data) ? bookData.data : [];
+            
             const formattedEvents = rawBookings.map(booking => {
                 if (!booking.date || !booking.time) return null;
-                const start = new Date(`${booking.date}T${booking.time}`);
-                const duration = booking.duration || 60;
+                const start = new Date(`${booking.date.split('T')[0]}T${booking.time}`);
+                const duration = parseInt(booking.duration) || 60;
                 const end = moment(start).add(duration, 'minutes').toDate();
-                return { id: booking.id, title: booking.name || 'Client', service: booking.service_name || 'Service', start, end, resourceId: booking.staff, phone: booking.phone, duration: duration };
+                return { 
+                    id: booking.id, 
+                    title: booking.name || 'Client', 
+                    service: booking.service_name || 'Service', 
+                    start, 
+                    end, 
+                    resourceId: booking.staff, 
+                    phone: booking.phone, 
+                    duration: duration 
+                };
             }).filter(e => e !== null);
+            
             setEvents(formattedEvents);
-        } catch (err) { console.error("Failed to load data:", err); setEvents([]); }
+        } catch (err) { 
+            console.error("Failed to load data:", err); 
+            setEvents([]); 
+        }
     }, []);
 
-    // --- FIX: Vider les événements immédiatement quand la date change ---
     useEffect(() => {
-        setEvents([]); // Étape 1: Vider l'écran
+        setEvents([]); 
         const timer = setTimeout(() => {
-            loadData(currentDate); // Étape 2: Charger les nouvelles données
-        }, 50); // Petit délai pour laisser l'interface se mettre à jour
-        return () => clearTimeout(timer); // Nettoyage
+            loadData(currentDate); 
+        }, 50); 
+        return () => clearTimeout(timer); 
     }, [currentDate, loadData]);
 
     const handleSaveBooking = async (formData) => {
-        const dataToSend = { name: formData.clientName, phone: formData.phone, service_name: formData.service, staff: formData.staff, date: formData.date, time: formData.time, duration: formData.duration, price: "0", status: "confirmed" };
+        const dataToSend = { 
+            name: formData.clientName, 
+            phone: formData.phone, 
+            service_name: formData.service, 
+            staff: formData.staff, 
+            date: formData.date, 
+            time: formData.time, 
+            duration: formData.duration, 
+            price: "0", 
+            status: "confirmed" 
+        };
+        
+        // Utilisation de localhost
         const url = formData.id ? `https://onhair.onrender.com/api/bookings/${formData.id}` : 'https://onhair.onrender.com/api/bookings';
         const method = formData.id ? 'PATCH' : 'POST';
-        try { await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dataToSend) }); } 
-        catch (err) { alert("Erreur serveur"); }
+        
+        try { 
+            const response = await fetch(url, { 
+                method, 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify(dataToSend) 
+            }); 
+            if (!response.ok) throw new Error("Erreur lors de la sauvegarde");
+        } 
+        catch (err) { alert("Erreur serveur : " + err.message); }
+        
         setModalInitialData(null);
         loadData(currentDate);
     };
@@ -62,14 +105,36 @@ export default function Planning({ onBack, role }) {
     const handleMoveEvent = async (eventId, newStart, newStaffId) => {
         const eventToMove = events.find(ev => ev.id == eventId);
         if (!eventToMove) return;
-        setEvents(prev => prev.map(ev => ev.id == eventId ? { ...ev, start: newStart, end: moment(newStart).add(ev.duration, 'minutes').toDate(), resourceId: newStaffId } : ev));
-        try { await fetch(`https://onhair.onrender.com/api/bookings/${eventId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ date: moment(newStart).format('YYYY-MM-DD'), time: moment(newStart).format('HH:mm'), staff: newStaffId }) }); } 
-        catch (err) { alert("Erreur serveur"); loadData(currentDate); }
+
+        // Mise à jour visuelle immédiate (Optimistic UI)
+        setEvents(prev => prev.map(ev => ev.id == eventId ? { 
+            ...ev, 
+            start: newStart, 
+            end: moment(newStart).add(ev.duration, 'minutes').toDate(), 
+            resourceId: newStaffId 
+        } : ev));
+
+        try { 
+            // Utilisation de localhost
+            await fetch(`https://onhair.onrender.com/api/bookings/${eventId}`, { 
+                method: 'PATCH', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify({ 
+                    date: moment(newStart).format('YYYY-MM-DD'), 
+                    time: moment(newStart).format('HH:mm'), 
+                    staff: newStaffId 
+                }) 
+            }); 
+        } 
+        catch (err) { 
+            alert("Erreur serveur lors du déplacement"); 
+            loadData(currentDate); 
+        }
     };
 
-    // --- MODIFIÉ: La fonction pour supprimer est maintenant passée au modal ---
     const handleDeleteEvent = async (id) => {
         try { 
+            // Utilisation de localhost
             await fetch(`https://onhair.onrender.com/api/bookings/${id}`, { method: 'DELETE' }); 
             setModalInitialData(null); 
             loadData(currentDate); 
@@ -78,7 +143,17 @@ export default function Planning({ onBack, role }) {
     };
     
     const handleGridClick = (clickedDate) => { setModalInitialData({ date: clickedDate }); };
-    const handleEventClick = (event) => { setModalInitialData({ id: event.id, clientName: event.title, phone: event.phone, service: event.service, staff: event.resourceId, date: event.start, duration: event.duration }); };
+    const handleEventClick = (event) => { 
+        setModalInitialData({ 
+            id: event.id, 
+            clientName: event.title, 
+            phone: event.phone, 
+            service: event.service, 
+            staff: event.resourceId, 
+            date: event.start, 
+            duration: event.duration 
+        }); 
+    };
 
     return (
         <div style={{position: 'fixed', inset: 0, background: '#000000', zIndex: 9999, display:'flex', flexDirection:'column', fontFamily:'Inter, sans-serif', color:'white'}}>
@@ -97,7 +172,6 @@ export default function Planning({ onBack, role }) {
                 {currentView === 'week' && <PlanningWeek events={events} date={currentDate} setDate={setCurrentDate} onEventClick={handleEventClick} />}
                 {currentView === 'month' && <PlanningMonth events={events} date={currentDate} setDate={setCurrentDate} onEventClick={handleEventClick} />}
             </div>
-            {/* --- MODIFIÉ: On passe la fonction onDelete au Modal --- */}
             <BookingModal isOpen={!!modalInitialData} onClose={() => setModalInitialData(null)} staffList={resources} onSave={handleSaveBooking} initialData={modalInitialData} onDelete={handleDeleteEvent} />
         </div>
     );
