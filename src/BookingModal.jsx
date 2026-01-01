@@ -10,18 +10,38 @@ const SERVICES_CONFIG = {
     "MASSAGE": [ { name: "Massage Relaxant 30min", duration: 30 }, { name: "Massage Relaxant 45min", duration: 45 }, { name: "Massage Relaxant 60min", duration: 60 }, { name: "Massage Nuque et épaules 15min", duration: 15 }, { name: "Massage cranien et faciale 15min", duration: 15 }, { name: "Massage des pieds 15min", duration: 15 } ],
 };
 
-const findService = (serviceName) => { for (const category in SERVICES_CONFIG) { const found = SERVICES_CONFIG[category].find(s => s.name === serviceName); if (found) return found; } return null; };
+const findService = (serviceName) => { 
+    for (const category in SERVICES_CONFIG) { 
+        const found = SERVICES_CONFIG[category].find(s => s.name === serviceName); 
+        if (found) return found; 
+    } 
+    return null; 
+};
 
 export default function BookingModal({ isOpen, onClose, staffList = [], onSave, initialData, onDelete }) {
-    const [formData, setFormData] = useState({});
+    // Initialisation avec des chaînes vides pour éviter l'erreur "uncontrolled input"
+    const [formData, setFormData] = useState({
+        id: null,
+        clientName: '',
+        phone: '',
+        service: '',
+        staff: '',
+        date: '',
+        time: '',
+        duration: 30
+    });
 
     useEffect(() => {
         if (isOpen && initialData) {
             const defaultService = findService(initialData.service) || SERVICES_CONFIG["COIFFURE"][0];
             setFormData({
-                id: initialData.id || null, clientName: initialData.clientName || '', phone: initialData.phone || '',
-                service: defaultService.name, staff: initialData.staff || (staffList.length > 0 ? staffList[0].id : ''),
-                date: moment(initialData.date).format('YYYY-MM-DD'), time: moment(initialData.date).format('HH:mm'),
+                id: initialData.id || null, 
+                clientName: initialData.clientName || '', 
+                phone: initialData.phone || '',
+                service: defaultService.name, 
+                staff: initialData.staff || (staffList.length > 0 ? staffList[0].id : ''),
+                date: moment(initialData.date).format('YYYY-MM-DD'), 
+                time: moment(initialData.date).format('HH:mm'),
                 duration: initialData.duration || defaultService.duration,
             });
         }
@@ -29,31 +49,120 @@ export default function BookingModal({ isOpen, onClose, staffList = [], onSave, 
 
     if (!isOpen) return null;
 
-    const handleServiceChange = (e) => { const serviceName = e.target.value; const serviceConfig = findService(serviceName); setFormData({ ...formData, service: serviceName, duration: serviceConfig ? serviceConfig.duration : 30 }); };
-    const handleSubmit = (e) => { e.preventDefault(); onSave(formData); };
-    const handleDelete = () => { if (window.confirm("Êtes-vous sûr de vouloir supprimer ce rendez-vous ?")) { onDelete(formData.id); } };
+    const handleServiceChange = (e) => { 
+        const serviceName = e.target.value; 
+        const serviceConfig = findService(serviceName); 
+        setFormData({ ...formData, service: serviceName, duration: serviceConfig ? serviceConfig.duration : 30 }); 
+    };
+
+    const handleSubmit = (e) => { 
+        e.preventDefault(); 
+        onSave(formData); 
+    };
+
+    const handleDelete = () => { 
+        if (window.confirm("Êtes-vous sûr de vouloir supprimer ce rendez-vous ?")) { 
+            onDelete(formData.id); 
+        } 
+    };
+
     const isEditing = formData.id !== null;
 
     return (
         <div style={styles.overlay}>
             <div style={styles.modal}>
-                <div style={styles.header}><h2 style={{margin:0}}>{isEditing ? 'Modifier la Réservation' : 'Nouvelle Réservation'}</h2><button onClick={onClose} style={styles.closeBtn}><X size={24} /></button></div>
+                <div style={styles.header}>
+                    <h2 style={{margin:0}}>{isEditing ? 'Modifier la Réservation' : 'Nouvelle Réservation'}</h2>
+                    <button onClick={onClose} style={styles.closeBtn}><X size={24} /></button>
+                </div>
                 <form onSubmit={handleSubmit} style={styles.form}>
                     <div style={styles.row}>
-                        <div style={styles.group}><label style={styles.label}><User size={14}/> Client</label><input required placeholder="Prénom Nom" style={styles.input} value={formData.clientName} onChange={e => setFormData({...formData, clientName: e.target.value})} /></div>
-                        <div style={styles.group}><label style={styles.label}><Phone size={14}/> Téléphone</label><input placeholder="06..." style={styles.input} value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} /></div>
+                        <div style={styles.group}>
+                            <label style={styles.label}><User size={14}/> Client</label>
+                            <input 
+                                required 
+                                placeholder="Prénom Nom" 
+                                style={styles.input} 
+                                value={formData.clientName || ''} 
+                                onChange={e => setFormData({...formData, clientName: e.target.value})} 
+                            />
+                        </div>
+                        <div style={styles.group}>
+                            <label style={styles.label}><Phone size={14}/> Téléphone</label>
+                            <input 
+                                placeholder="06..." 
+                                style={styles.input} 
+                                value={formData.phone || ''} 
+                                onChange={e => setFormData({...formData, phone: e.target.value})} 
+                            />
+                        </div>
                     </div>
                     <div style={styles.row}>
-                        <div style={styles.group}><label style={styles.label}><Scissors size={14}/> Service</label><select style={styles.select} value={formData.service} onChange={handleServiceChange}>{Object.keys(SERVICES_CONFIG).map(category => (<optgroup label={category} key={category}>{SERVICES_CONFIG[category].map(service => ( <option value={service.name} key={service.name}>{service.name}</option>))}</optgroup>))}</select></div>
-                        <div style={styles.group}><label style={styles.label}><User size={14}/> Coiffeur</label><select style={styles.select} value={formData.staff} onChange={e => setFormData({...formData, staff: e.target.value})}>{staffList.map(s => ( <option key={s.id} value={s.id}>{s.title}</option>))}</select></div>
+                        <div style={styles.group}>
+                            <label style={styles.label}><Scissors size={14}/> Service</label>
+                            <select 
+                                style={styles.select} 
+                                value={formData.service || ''} 
+                                onChange={handleServiceChange}
+                            >
+                                <option value="" disabled>Choisir un service...</option>
+                                {Object.keys(SERVICES_CONFIG).map(category => (
+                                    <optgroup label={category} key={category}>
+                                        {SERVICES_CONFIG[category].map(service => ( 
+                                            <option value={service.name} key={service.name}>{service.name}</option>
+                                        ))}
+                                    </optgroup>
+                                ))}
+                            </select>
+                        </div>
+                        <div style={styles.group}>
+                            <label style={styles.label}><User size={14}/> Coiffeur</label>
+                            <select 
+                                style={styles.select} 
+                                value={formData.staff || ''} 
+                                onChange={e => setFormData({...formData, staff: e.target.value})}
+                            >
+                                <option value="" disabled>Choisir...</option>
+                                {staffList.map(s => ( 
+                                    <option key={s.id} value={s.id}>{s.title}</option>
+                                ))}
+                            </select>
+                        </div>
                     </div>
                     <div style={styles.row}>
-                        <div style={styles.group}><label style={styles.label}><Calendar size={14}/> Date</label><input type="date" style={styles.input} value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} /></div>
-                        <div style={styles.group}><label style={styles.label}><Clock size={14}/> Heure</label><input type="time" step="900" style={styles.input} value={formData.time} onChange={e => setFormData({...formData, time: e.target.value})} /></div>
-                        <div style={styles.group}><label style={styles.label}><Clock size={14}/> Durée</label><select style={styles.select} value={formData.duration} onChange={e => setFormData({...formData, duration: parseInt(e.target.value)})}>{ [15, 30, 45, 60, 75, 90, 120, 150, 180, 240].map(d => <option key={d} value={d}>{`${Math.floor(d/60)}h ${d%60 < 10 ? '0' : ''}${d%60}`}</option>) }</select></div>
+                        <div style={styles.group}>
+                            <label style={styles.label}><Calendar size={14}/> Date</label>
+                            <input 
+                                type="date" 
+                                style={styles.input} 
+                                value={formData.date || ''} 
+                                onChange={e => setFormData({...formData, date: e.target.value})} 
+                            />
+                        </div>
+                        <div style={styles.group}>
+                            <label style={styles.label}><Clock size={14}/> Heure</label>
+                            <input 
+                                type="time" 
+                                step="900" 
+                                style={styles.input} 
+                                value={formData.time || ''} 
+                                onChange={e => setFormData({...formData, time: e.target.value})} 
+                            />
+                        </div>
+                        <div style={styles.group}>
+                            <label style={styles.label}><Clock size={14}/> Durée</label>
+                            <select 
+                                style={styles.select} 
+                                value={formData.duration || 30} 
+                                onChange={e => setFormData({...formData, duration: parseInt(e.target.value)})}
+                            >
+                                { [15, 30, 45, 60, 75, 90, 120, 150, 180, 240].map(d => (
+                                    <option key={d} value={d}>{`${Math.floor(d/60)}h ${d%60 < 10 ? '0' : ''}${d%60}`}</option>
+                                ))}
+                            </select>
+                        </div>
                     </div>
                     
-                    {/* --- MODIFIÉ: Le footer contient maintenant le bouton Supprimer --- */}
                     <div style={styles.footer}>
                         {isEditing && (
                             <button type="button" onClick={handleDelete} style={styles.deleteBtn}>
@@ -70,4 +179,18 @@ export default function BookingModal({ isOpen, onClose, staffList = [], onSave, 
     );
 }
 
-const styles = { overlay: { position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.8)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 10000, backdropFilter: 'blur(5px)' }, modal: { backgroundColor: '#18181b', width: '90%', maxWidth: '600px', borderRadius: '16px', border: '1px solid #27272a', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)', overflow: 'hidden' }, header: { padding: '20px', borderBottom: '1px solid #27272a', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#27272a', color: 'white' }, closeBtn: { background: 'transparent', border: 'none', color: 'white', cursor: 'pointer' }, form: { padding: '25px', display: 'flex', flexDirection: 'column', gap: '20px' }, row: { display: 'flex', gap: '15px', flexWrap: 'wrap' }, group: { flex: '1 1 150px', display: 'flex', flexDirection: 'column', gap: '8px' }, label: { color: '#a1a1aa', fontSize: '12px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '5px' }, input: { background: '#27272a', border: '1px solid #3f3f46', color: 'white', padding: '10px', borderRadius: '8px', outline: 'none', fontSize: '14px' }, select: { background: '#27272a', border: '1px solid #3f3f46', color: 'white', padding: '10px', borderRadius: '8px', outline: 'none', fontSize: '14px' }, footer: { display: 'flex', gap: '10px', marginTop: '10px' }, deleteBtn: { padding: '12px', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid #ef4444', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontWeight:'bold', fontSize: '14px' }, submitBtn: { flex: 1, background: '#EC4899', color: 'white', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px' } };
+const styles = { 
+    overlay: { position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.8)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 10000, backdropFilter: 'blur(5px)' }, 
+    modal: { backgroundColor: '#18181b', width: '90%', maxWidth: '600px', borderRadius: '16px', border: '1px solid #27272a', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)', overflow: 'hidden' }, 
+    header: { padding: '20px', borderBottom: '1px solid #27272a', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#27272a', color: 'white' }, 
+    closeBtn: { background: 'transparent', border: 'none', color: 'white', cursor: 'pointer' }, 
+    form: { padding: '25px', display: 'flex', flexDirection: 'column', gap: '20px' }, 
+    row: { display: 'flex', gap: '15px', flexWrap: 'wrap' }, 
+    group: { flex: '1 1 150px', display: 'flex', flexDirection: 'column', gap: '8px' }, 
+    label: { color: '#a1a1aa', fontSize: '12px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '5px' }, 
+    input: { background: '#27272a', border: '1px solid #3f3f46', color: 'white', padding: '10px', borderRadius: '8px', outline: 'none', fontSize: '14px' }, 
+    select: { background: '#27272a', border: '1px solid #3f3f46', color: 'white', padding: '10px', borderRadius: '8px', outline: 'none', fontSize: '14px' }, 
+    footer: { display: 'flex', gap: '10px', marginTop: '10px' }, 
+    deleteBtn: { padding: '12px', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid #ef4444', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontWeight:'bold', fontSize: '14px' }, 
+    submitBtn: { flex: 1, background: '#EC4899', color: 'white', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px' } 
+};

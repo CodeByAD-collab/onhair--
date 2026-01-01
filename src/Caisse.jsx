@@ -1,343 +1,182 @@
-import React, { useState, useEffect } from 'react';
-import { Wallet, TrendingUp, TrendingDown, Trash2, Save, ArrowRight, Calendar } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Wallet, Trash2, XCircle, List, FileText } from 'lucide-react';
 
-const ENVELOPPES = [
-    "Revenus",
-    "Charges Fixes",
-    "Les Produits",
-    "Produit Sorali",
-    "L'Esthétique",
-    "Produit Esthétique"
-];
+// === CONFIGURATION: Your Live Server URL ===
+const API_BASE_URL = 'https://onhair.onrender.com';
+
+const ENVELOPPES = ["Revenus", "Charges Fixes", "Les Produits", "Produit Sorali", "L'Esthétique", "Produit Esthétique"];
 
 export default function Caisse() {
     const [transactions, setTransactions] = useState([]);
-    const [totals, setTotals] = useState({});
-    const [soldeTotal, setSoldeTotal] = useState(0);
-    
-    // --- NOUVEAU : GESTION DE LA DATE SÉLECTIONNÉE ---
-    const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-
-    // Formulaire
-    const [formData, setFormData] = useState({
-        amount: '',
-        description: '',
-        category: 'Revenus',
-        type: 'income'
+    const [totals, setTotals] = useState(() => {
+        const init = {};
+        ENVELOPPES.forEach(cat => init[cat] = 0);
+        return init;
     });
+    const [soldeTotal, setSoldeTotal] = useState(0);
+    const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+    const [activeFilter, setActiveFilter] = useState(null);
+    const [isFormOpen, setIsFormOpen] = useState(false);
+    const formRef = useRef(null);
+
+    const [formData, setFormData] = useState({ amount: '', name: '', category: '', type: 'income', notes: '' });
 
     useEffect(() => {
         loadData();
-    }, [selectedDate]); // Re-calculate when date changes
+    }, [selectedDate]);
 
     const loadData = async () => {
         try {
-            const res = await fetch('https://onhair.onrender.com/api/expenses');
+            // FIXED: Using the correct live URL
+            const res = await fetch(`${API_BASE_URL}/api/expenses`);
+            if (!res.ok) return;
             const json = await res.json();
             const data = json.data || [];
-            
             setTransactions(data);
-            calculateTotals(data);
+            
+            const newTotals = {};
+            ENVELOPPES.forEach(cat => newTotals[cat] = 0);
+            data.forEach(t => {
+                if (t.date === selectedDate) {
+                    newTotals[t.category] = (newTotals[t.category] || 0) + (parseFloat(t.amount) || 0);
+                }
+            });
+            setTotals(newTotals);
+            setSoldeTotal(data.reduce((acc, curr) => acc + (parseFloat(curr.amount) || 0), 0));
         } catch (err) {
-            console.error(err);
+            console.error("Failed to load data:", err);
         }
     };
 
-    const calculateTotals = (data) => {
-        const newTotals = {};
-        ENVELOPPES.forEach(cat => newTotals[cat] = 0);
-
-        data.forEach(t => {
-            if (newTotals[t.category] !== undefined) {
-                // LOGIQUE MODIFIÉE :
-                // 1. "Revenus" : On affiche seulement le total de la DATE CHOISIE
-                if (t.category === 'Revenus') {
-                    if (t.date === selectedDate) {
-                        newTotals['Revenus'] += t.amount;
-                    }
-                } else {
-                    // 2. Autres Enveloppes : On garde le total global (Cagnotte)
-                    newTotals[t.category] += t.amount;
-                }
-            }
-        });
-
-        // Solde Total = Toujours la somme de TOUT l'historique (Argent réel en caisse)
-        const globalSum = data.reduce((acc, curr) => acc + curr.amount, 0);
-
-        setTotals(newTotals);
-        setSoldeTotal(globalSum);
+    const handleCardClick = (category) => {
+        setActiveFilter(category);
+        setFormData({ ...formData, category: category, name: '' });
+        setIsFormOpen(true);
+        setTimeout(() => formRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!formData.amount || !formData.description) return alert("Remplissez tout !");
-
-        const finalAmount = formData.type === 'expense' 
-            ? -Math.abs(parseFloat(formData.amount)) 
-            : Math.abs(parseFloat(formData.amount));
-
-        const newTransaction = {
-            category: formData.category,
-            name: formData.description,
+        if (!formData.amount || !formData.category) {
+            return alert("Saisir un montant et une catégorie !");
+        }
+        const finalAmount = formData.type === 'expense' ? -Math.abs(parseFloat(formData.amount)) : Math.abs(parseFloat(formData.amount));
+        
+        const dataToSend = {
             amount: finalAmount,
-            date: selectedDate // On utilise la date sélectionnée (pratique pour saisir des oublis d'hier)
+            name: formData.name || formData.category, // Use 'name' from form, fallback to category
+            category: formData.category,
+            date: selectedDate,
+            notes: formData.notes
         };
 
         try {
-            await fetch('https://onhair.onrender.com/api/expenses', {
-                method: 'POST',
+            // FIXED: Using the correct live URL
+            const response = await fetch(`${API_BASE_URL}/api/expenses`, {
+                method: 'POST', 
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(newTransaction)
+                body: JSON.stringify(dataToSend)
             });
-            setFormData({ ...formData, amount: '', description: '' });
-            loadData();
+            if (response.ok) {
+                setFormData({ amount: '', name: '', category: '', type: 'income', notes: '' });
+                setIsFormOpen(false);
+                loadData(); // Reload all data
+            } else {
+                alert("Erreur lors de la sauvegarde.");
+            }
         } catch (err) {
-            alert("Erreur de sauvegarde");
+            alert("Erreur de connexion au serveur.");
         }
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm("Supprimer cette transaction ?")) return;
+        if (!window.confirm("Supprimer ce mouvement ?")) return;
         try {
-            await fetch(`https://onhair.onrender.com/api/expenses/${id}`, { method: 'DELETE' });
-            loadData();
-        } catch (err) { alert("Erreur"); }
+            // FIXED: Using the correct live URL
+            const res = await fetch(`${API_BASE_URL}/api/expenses/${id}`, { method: 'DELETE' });
+            if (res.ok) {
+                loadData();
+            } else {
+                alert("Erreur lors de la suppression (Serveur)");
+            }
+        } catch (err) {
+            alert("Erreur de connexion");
+        }
     };
 
-    // --- FILTRER LA LISTE PAR DATE ---
-    const filteredTransactions = transactions.filter(t => t.date === selectedDate);
+    const displayTransactions = transactions.filter(t => t.date === selectedDate && (activeFilter ? t.category === activeFilter : true));
 
     return (
         <div className="caisse-container">
             <style>{`
-                .caisse-container { padding: 30px; background: #000000; min-height: 100vh; color: white; font-family: 'Inter', sans-serif; overflow-y: auto; }
-                
-                .caisse-header { 
-                    margin-bottom: 30px; 
-                    display: flex; 
-                    justify-content: space-between; 
-                    align-items: center;
-                    padding-bottom: 20px;
-                    border-bottom: 1px solid #27272a;
-                }
-                
-                .cards-grid { 
-                    display: grid; 
-                    grid-template-columns: repeat(3, 1fr); 
-                    gap: 15px; 
-                    margin-bottom: 30px; 
-                }
-
-                .main-content { display: flex; gap: 30px; align-items: flex-start; }
-                .form-section { flex: 1; background: #18181b; padding: 25px; border-radius: 20px; border: 1px solid #27272a; }
-                .history-section { flex: 1.5; background: #18181b; padding: 25px; border-radius: 20px; border: 1px solid #27272a; min-height: 500px; display:flex; flex-direction:column; }
-
-                /* DATE PICKER STYLE */
-                .date-selector {
-                    background: #18181b;
-                    color: white;
-                    border: 1px solid #374151;
-                    padding: 10px 15px;
-                    border-radius: 8px;
-                    outline: none;
-                    cursor: pointer;
-                    font-family: inherit;
-                    font-weight: bold;
-                }
-
-                @media (max-width: 900px) {
-                    .caisse-container { padding: 15px; }
-                    .caisse-header { flex-direction: column; align-items: flex-start; gap: 20px; }
-                    .header-actions { width: 100%; display: flex; flex-direction: column; gap: 10px; }
-                    .total-card { width: 100%; box-sizing: border-box; }
-                    .cards-grid { grid-template-columns: 1fr; } 
-                    .main-content { flex-direction: column; }
-                    .form-section, .history-section { width: 100%; box-sizing: border-box; }
-                }
+                .caisse-container { padding: 20px; background: #000; min-height: 100vh; color: white; font-family: 'Inter', sans-serif; }
+                .card { background: #18181b; padding: 15px; border-radius: 12px; border: 1px solid #27272a; cursor: pointer; transition: 0.2s; }
+                .card.active { border-color: #EC4899; background: #2d1421; }
+                .cards-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px; }
+                .form-section { background: #18181b; padding: 20px; border-radius: 20px; border: 1px solid #EC4899; margin-bottom: 20px; }
+                .input { background: #000; border: 1px solid #333; color: white; padding: 12px; border-radius: 8px; width: 100%; margin-bottom: 10px; box-sizing: border-box; font-size:16px; }
+                .badge { background: #EC4899; color: white; padding: 4px 10px; border-radius: 20px; font-size: 11px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; }
             `}</style>
-            
-            {/* --- HEADER --- */}
-            <div className="caisse-header">
-                <div>
-                    <h1 style={{fontSize:28, fontWeight:'bold', display:'flex', alignItems:'center', gap:10, margin:0}}>
-                        <Wallet size={32} color="#EC4899"/> Gestion de Caisse
-                    </h1>
-                    <div style={{color:'#9ca3af', marginTop:5}}>Sélectionnez une date pour voir l'historique</div>
-                </div>
 
-                <div className="header-actions" style={{display:'flex', gap:20, alignItems:'center'}}>
-                    {/* SÉLECTEUR DE DATE */}
-                    <div style={{display:'flex', alignItems:'center', gap:10}}>
-                        <Calendar size={20} color="#EC4899"/>
-                        <input 
-                            type="date" 
-                            className="date-selector"
-                            value={selectedDate}
-                            onChange={(e) => setSelectedDate(e.target.value)}
-                        />
-                    </div>
-
-                    <div className="total-card" style={styles.totalCard}>
-                        <div style={{fontSize:12, textTransform:'uppercase', opacity:0.8}}>Solde Total (Reel)</div>
-                        <div style={{fontSize:28, fontWeight:'bold'}}>
-                            {soldeTotal.toLocaleString()} <span style={{fontSize:14}}>DH</span>
-                        </div>
-                    </div>
+            <div style={{textAlign:'center', marginBottom:20}}>
+                <h2 style={{margin:0}}>Caisse OnHair</h2>
+                <div style={{background: '#10B981', padding: '5px 15px', borderRadius: 20, display:'inline-block', marginTop:10, fontSize:14}}>
+                    SOLDE: <b>{soldeTotal.toLocaleString()} DH</b>
                 </div>
             </div>
 
-            {/* --- ENVELOPES CARDS --- */}
+            <input type="date" style={{background:'#18181b', color:'white', border:'1px solid #333', padding:10, borderRadius:8, width:'100%', marginBottom:20}} value={selectedDate} onChange={e => setSelectedDate(e.target.value)} />
+
             <div className="cards-grid">
                 {ENVELOPPES.map(cat => (
-                    <div key={cat} style={styles.card}>
-                        <div style={styles.cardHeader}>
-                            <span style={styles.cardTitle}>
-                                {cat} {cat === 'Revenus' ? '(Jour Sélectionné)' : ''}
-                            </span>
-                            {totals[cat] >= 0 ? <TrendingUp size={20} color="#10B981"/> : <TrendingDown size={20} color="#EF4444"/>}
-                        </div>
-                        <div style={{...styles.cardAmount, color: totals[cat] >= 0 ? '#10B981' : '#EF4444'}}>
-                            {totals[cat]} <span style={{fontSize:14}}>DH</span>
+                    <div key={cat} className={`card ${activeFilter === cat ? 'active' : ''}`} onClick={() => handleCardClick(cat)}>
+                        <div style={{fontSize:10, color: '#9ca3af', textTransform:'uppercase'}}>{cat}</div>
+                        <div style={{fontSize:18, fontWeight:'bold', color: (totals[cat] || 0) >= 0 ? '#10B981' : '#EF4444'}}>
+                            {(totals[cat] || 0).toLocaleString()} DH
                         </div>
                     </div>
                 ))}
             </div>
 
-            <div className="main-content">
-                
-                {/* --- FORMULAIRE --- */}
-                <div className="form-section">
-                    <h3 style={{marginTop:0, borderBottom:'1px solid #333', paddingBottom:10}}>
-                        Opération pour le {new Date(selectedDate).toLocaleDateString('fr-FR')}
-                    </h3>
-                    
-                    <form onSubmit={handleSubmit} style={styles.form}>
-                        <div style={styles.toggleContainer}>
-                            <div 
-                                onClick={() => setFormData({...formData, type: 'income'})}
-                                style={{...styles.toggleBtn, background: formData.type === 'income' ? '#10B981' : '#27272a'}}
-                            >
-                                <TrendingUp size={16}/> Ajouter (+)
-                            </div>
-                            <div 
-                                onClick={() => setFormData({...formData, type: 'expense'})}
-                                style={{...styles.toggleBtn, background: formData.type === 'expense' ? '#EF4444' : '#27272a'}}
-                            >
-                                <TrendingDown size={16}/> Déduire (-)
-                            </div>
+            {isFormOpen && (
+                <div className="form-section" ref={formRef}>
+                    <div style={{display:'flex', justifyContent:'space-between', marginBottom:15}}>
+                        <h3 style={{margin:0, color:'#EC4899'}}>Saisie: {formData.category}</h3>
+                        <XCircle onClick={() => setIsFormOpen(false)} style={{cursor:'pointer', color:'#444'}} />
+                    </div>
+                    <form onSubmit={handleSubmit}>
+                        <div style={{display:'flex', gap:10, marginBottom:10}}>
+                            <button type="button" onClick={() => setFormData({...formData, type:'income'})} style={{flex:1, background: formData.type === 'income' ? '#10B981' : '#333', border:'none', padding:10, borderRadius:8, color:'white', fontWeight:'bold'}}>Encaisser (+)</button>
+                            <button type="button" onClick={() => setFormData({...formData, type:'expense'})} style={{flex:1, background: formData.type === 'expense' ? '#EF4444' : '#333', border:'none', padding:10, borderRadius:8, color:'white', fontWeight:'bold'}}>Sortie (-)</button>
                         </div>
-
-                        <div style={styles.inputGroup}>
-                            <label>Enveloppe concernée</label>
-                            <select 
-                                style={styles.input} 
-                                value={formData.category}
-                                onChange={e => setFormData({...formData, category: e.target.value})}
-                            >
-                                {ENVELOPPES.map(c => <option key={c} value={c}>{c}</option>)}
-                            </select>
-                        </div>
-
-                        <div style={styles.inputGroup}>
-                            <label>Montant (DH)</label>
-                            <input 
-                                type="number" 
-                                placeholder="0.00" 
-                                style={styles.input}
-                                value={formData.amount}
-                                onChange={e => setFormData({...formData, amount: e.target.value})}
-                            />
-                        </div>
-
-                        <div style={styles.inputGroup}>
-                            <label>Motif / Description</label>
-                            <input 
-                                type="text" 
-                                placeholder="Ex: Vente Produits..." 
-                                style={styles.input}
-                                value={formData.description}
-                                onChange={e => setFormData({...formData, description: e.target.value})}
-                            />
-                        </div>
-
-                        <button type="submit" style={styles.submitBtn}>
-                            <Save size={18}/> Valider l'opération
-                        </button>
+                        <input className="input" type="number" placeholder="Montant DH" value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} autoFocus />
+                        <input className="input" type="text" placeholder="Motif (ex: Vente)" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+                        <textarea className="input" placeholder="Notes techniques..." value={formData.notes} onChange={e => setFormData({...formData, notes: e.target.value})} rows={2} />
+                        <button type="submit" style={{width:'100%', padding:15, background:'#EC4899', color:'white', border:'none', borderRadius:10, fontWeight:'bold'}}>VALIDER</button>
                     </form>
                 </div>
+            )}
 
-                {/* --- HISTORIQUE (FILTRÉ PAR DATE) --- */}
-                <div className="history-section">
-                    <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', borderBottom:'1px solid #333', paddingBottom:10}}>
-                        <h3 style={{margin:0}}>Mouvements du {selectedDate}</h3>
-                        <span style={{fontSize:12, background:'#333', padding:'4px 8px', borderRadius:4}}>{filteredTransactions.length} Opérations</span>
-                    </div>
-                    
-                    <div style={styles.transactionsList}>
-                        {filteredTransactions.length === 0 && (
-                            <div style={{opacity:0.5, textAlign:'center', marginTop:50}}>
-                                Aucune transaction à cette date.
-                            </div>
-                        )}
-                        
-                        {filteredTransactions.map(t => (
-                            <div key={t.id} style={styles.transactionItem}>
-                                <div style={{display:'flex', gap:15, alignItems:'center'}}>
-                                    <div style={{
-                                        background: t.amount >= 0 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                                        padding: 10, borderRadius: '50%',
-                                        color: t.amount >= 0 ? '#10B981' : '#EF4444'
-                                    }}>
-                                        {t.amount >= 0 ? <TrendingUp size={18}/> : <TrendingDown size={18}/>}
-                                    </div>
-                                    <div>
-                                        <div style={{fontWeight:'bold'}}>{t.name}</div>
-                                        <div style={{fontSize:12, color:'#9ca3af', display:'flex', alignItems:'center', gap:5}}>
-                                            {t.category}
-                                        </div>
-                                    </div>
-                                </div>
-                                <div style={{display:'flex', alignItems:'center', gap:15}}>
-                                    <div style={{fontWeight:'bold', color: t.amount >= 0 ? '#10B981' : '#EF4444'}}>
-                                        {t.amount > 0 ? '+' : ''}{t.amount} DH
-                                    </div>
-                                    <button onClick={() => handleDelete(t.id)} style={styles.deleteBtn}>
-                                        <Trash2 size={16}/>
-                                    </button>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+            <div style={{background: '#111', padding: 15, borderRadius: 15, border: '1px solid #222'}}>
+                <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10}}>
+                    <h3 style={{margin:0, fontSize:15}}>Mouvements du {new Date(selectedDate).toLocaleDateString('fr-FR')}</h3>
+                    {activeFilter && <span className="badge" onClick={() => setActiveFilter(null)}>{activeFilter} <XCircle size={12}/></span>}
                 </div>
-
+                {displayTransactions.length === 0 ? <p style={{color:'#444', textAlign:'center', padding:'20px 0'}}>Aucun mouvement.</p> : 
+                    displayTransactions.map(t => (
+                        <div key={t.id} style={{padding: '12px 0', borderBottom: '1px solid #222', display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+                            <div style={{flex:1}}>
+                                <div style={{fontSize:14, fontWeight:'bold'}}>{t.name} <small style={{color:'#EC4899'}}>({t.category})</small></div>
+                                {t.notes && <div style={{fontSize:11, color:'#666', fontStyle:'italic', marginTop:5}}><FileText size={10} style={{display:'inline', marginRight:5}}/>{t.notes}</div>}
+                            </div>
+                            <div style={{display:'flex', alignItems:'center', gap:10}}>
+                                <b style={{color: t.amount >= 0 ? '#10B981' : '#EF4444'}}>{t.amount} DH</b>
+                                <Trash2 size={16} color="#333" cursor="pointer" onClick={() => handleDelete(t.id)} />
+                            </div>
+                        </div>
+                    ))
+                }
             </div>
         </div>
     );
 }
-
-const styles = {
-    totalCard: {
-        background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
-        padding: '10px 20px',
-        borderRadius: '12px',
-        boxShadow: '0 10px 20px rgba(16, 185, 129, 0.3)',
-        color: 'white',
-        minWidth: '200px'
-    },
-    card: { background: '#18181b', padding: 20, borderRadius: 16, border: '1px solid #27272a' },
-    cardHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
-    cardTitle: { fontSize: 13, color: '#9ca3af', fontWeight: '600', textTransform: 'uppercase' },
-    cardAmount: { fontSize: 24, fontWeight: 'bold' },
-    
-    form: { display: 'flex', flexDirection: 'column', gap: 15 },
-    toggleContainer: { display: 'flex', gap: 10, marginBottom: 10 },
-    toggleBtn: { flex: 1, padding: 12, borderRadius: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontWeight: 'bold', transition:'0.2s' },
-    inputGroup: { display: 'flex', flexDirection: 'column', gap: 8 },
-    input: { background: '#27272a', border: '1px solid #3f3f46', color: 'white', padding: 12, borderRadius: 8, outline: 'none', width:'100%', boxSizing:'border-box' },
-    submitBtn: { marginTop: 10, background: 'white', color: 'black', padding: 12, borderRadius: 8, border: 'none', fontWeight: 'bold', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 10 },
-
-    transactionsList: { overflowY: 'auto', flex: 1, paddingRight: 5 },
-    transactionItem: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px 0', borderBottom: '1px solid #27272a' },
-    deleteBtn: { background: 'transparent', border: 'none', color: '#6b7280', cursor: 'pointer' }
-};

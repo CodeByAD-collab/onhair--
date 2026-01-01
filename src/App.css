@@ -40,3 +40,14 @@
 .read-the-docs {
   color: #888;
 }
+/* This prevents the auto-zoom on mobile devices */
+input, 
+select, 
+textarea {
+    font-size: 16px !important;
+}
+
+/* Optional: if your inputs look too big now, you can adjust the padding */
+input {
+    padding: 12px;
+}

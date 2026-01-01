@@ -1,53 +1,60 @@
 import React from 'react';
-import { Users, Calendar as CalIcon, LogOut, Scissors, LayoutDashboard, Wallet, User, X } from 'lucide-react';
+// On importe le logo qui est juste à côté du fichier
+import logo from './logo.jpg'; 
+import { Users, Calendar as CalIcon, LogOut, LayoutDashboard, Wallet, User, X } from 'lucide-react';
 
 export default function Sidebar({ viewMode, setViewMode, setIsLoggedIn, role, currentUser, isMobile, closeMobileMenu }) {
-    const allMenuItems = [
-        { id: 'dashboard', icon: LayoutDashboard, label: 'Tableau de Bord' },
-        { id: 'planning', icon: CalIcon, label: 'Planning' },
-        { id: 'finance', icon: Wallet, label: 'Caisse' },
-        { id: 'staff', icon: Users, label: 'Staff' },
-        { id: 'clients', icon: User, label: 'Clients' } 
-    ];
-
-    const menuItems = role === 'admin' 
-        ? allMenuItems.filter(item => item.id === 'planning') 
-        : allMenuItems;
-
-    const handleNav = (id) => {
-        setViewMode(id);
-        if (isMobile && closeMobileMenu) closeMobileMenu();
-    };
-
-    // --- NOUVEAU: La fonction de déconnexion est maintenant plus intelligente ---
+    
     const handleLogout = () => {
-        // 1. On vide le `localStorage`
         localStorage.removeItem('onhair_user');
-        // 2. On met à jour l'état pour afficher le formulaire de connexion
         setIsLoggedIn(false);
     };
 
     return (
         <div style={{ background: '#151E2E', height: '100%', width: '100%', padding: 20, display: 'flex', flexDirection: 'column', color: 'white' }}>
             <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:30}}>
-                <h2 style={{margin:0, display:'flex', gap:10, alignItems:'center'}}>
-                    <Scissors size={24} color="#EC4899"/> OnHair
-                </h2>
+                
+                {/* --- LE LOGO --- */}
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <img 
+                        src={logo} 
+                        alt="OnHair Logo" 
+                        style={{ height: '55px', width: 'auto', display: 'block' }} 
+                    />
+                </div>
+
                 {isMobile && <button onClick={closeMobileMenu} style={{background:'none', border:'none', color:'white'}}><X/></button>}
             </div>
 
-            <nav style={{flex:1, display:'flex', flexDirection:'column', gap:5}}>
-                {menuItems.map(item => (
-                    <div key={item.id} onClick={() => handleNav(item.id)}
-                        style={{ padding: '12px 15px', borderRadius: 10, cursor: 'pointer', display: 'flex', gap: 10, alignItems: 'center', background: viewMode === item.id ? '#EC4899' : 'transparent', fontWeight: viewMode === item.id ? 'bold' : 'normal', color: viewMode === item.id ? 'white' : '#aaa' }}>
-                        <item.icon size={20}/> {item.label}
-                    </div>
-                ))}
+            <nav style={{flex:1, display:'flex', flexDirection:'column', gap:10}}>
+                <div onClick={() => setViewMode('dashboard')} 
+                    style={{ padding: '12px', borderRadius: 10, cursor: 'pointer', display: 'flex', gap: 10, alignItems: 'center', background: viewMode === 'dashboard' ? '#EC4899' : 'transparent', color: 'white' }}>
+                    <LayoutDashboard size={20}/> Tableau de Bord
+                </div>
+                
+                <div onClick={() => setViewMode('planning')} 
+                    style={{ padding: '12px', borderRadius: 10, cursor: 'pointer', display: 'flex', gap: 10, alignItems: 'center', background: viewMode === 'planning' ? '#EC4899' : 'transparent', color: 'white' }}>
+                    <CalIcon size={20}/> Planning
+                </div>
+                
+                <div onClick={() => setViewMode('finance')} 
+                    style={{ padding: '12px', borderRadius: 10, cursor: 'pointer', display: 'flex', gap: 10, alignItems: 'center', background: viewMode === 'finance' ? '#EC4899' : 'transparent', color: 'white' }}>
+                    <Wallet size={20}/> Caisse
+                </div>
+                
+                <div onClick={() => setViewMode('staff')} 
+                    style={{ padding: '12px', borderRadius: 10, cursor: 'pointer', display: 'flex', gap: 10, alignItems: 'center', background: viewMode === 'staff' ? '#EC4899' : 'transparent', color: 'white' }}>
+                    <Users size={20}/> Staff
+                </div>
+                
+                <div onClick={() => setViewMode('clients')} 
+                    style={{ padding: '12px', borderRadius: 10, cursor: 'pointer', display: 'flex', gap: 10, alignItems: 'center', background: viewMode === 'clients' ? '#EC4899' : 'transparent', color: 'white' }}>
+                    <User size={20}/> Clients
+                </div>
             </nav>
 
-            {/* --- MODIFIÉ: On appelle la nouvelle fonction handleLogout --- */}
             <div onClick={handleLogout} style={{marginTop:'auto', padding:15, cursor:'pointer', color:'#EF4444', display:'flex', gap:10, alignItems: 'center', fontWeight: 'bold'}}>
-                <LogOut/> Déconnexion
+                <LogOut size={20}/> Déconnexion
             </div>
         </div>
     );
