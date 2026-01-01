@@ -20,7 +20,7 @@ export default function Planning({ onBack, role }) {
     const loadData = useCallback(async (dateToLoad) => {
         try {
             // Utilisation de localhost au lieu de onrender
-            const staffRes = await fetch('http://localhost:3000/api/staff');
+            const staffRes = await fetch('https://onhair.onrender.com/api/staff');
             const staffJson = await staffRes.json();
             const staffList = (staffJson?.data) ? staffJson.data : [];
             const validStaff = staffList.filter(s => s.name && !s.name.toUpperCase().includes("ASSIGNÉ"));
