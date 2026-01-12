@@ -22,7 +22,6 @@ export default function Planning({ onBack, role }) {
 
     const loadData = useCallback(async () => {
         try {
-            // FIXED: Using correct API path
             const staffRes = await fetch(`${API_BASE_URL}/api/staff`);
             const staffJson = await staffRes.json();
             const staffList = staffJson?.data || [];
@@ -37,7 +36,6 @@ export default function Planning({ onBack, role }) {
             }));
             setResources(myStaffColumns);
 
-            // FIXED: Using correct API path
             const bookRes = await fetch(`${API_BASE_URL}/api/bookings`);
             const bookData = await bookRes.json();
             const rawBookings = bookData?.data || [];
@@ -56,7 +54,7 @@ export default function Planning({ onBack, role }) {
                     resourceId: booking.staff, 
                     phone: booking.phone, 
                     duration: duration,
-                    notes: booking.notes // Added notes
+                    notes: booking.notes
                 };
             }).filter(e => e !== null);
             
@@ -67,8 +65,6 @@ export default function Planning({ onBack, role }) {
         }
     }, []);
 
-    // NOTE: This now reloads data only when the component mounts for the first time
-    // The calendar views will handle date changes internally without a full reload
     useEffect(() => {
         loadData(); 
     }, [loadData]);
@@ -85,7 +81,6 @@ export default function Planning({ onBack, role }) {
             notes: formData.notes
         };
         
-        // FIXED: Using correct API path
         const url = formData.id ? `${API_BASE_URL}/api/bookings/${formData.id}` : `${API_BASE_URL}/api/bookings`;
         const method = formData.id ? 'PATCH' : 'POST';
         
@@ -100,7 +95,7 @@ export default function Planning({ onBack, role }) {
         catch (err) { alert("Erreur serveur : " + err.message); }
         
         setModalInitialData(null);
-        loadData(); // Reload all data
+        loadData();
     };
 
     const handleMoveEvent = async (eventId, newStart, newStaffId) => {
@@ -110,7 +105,6 @@ export default function Planning({ onBack, role }) {
         setEvents(prev => prev.map(ev => ev.id == eventId ? { ...ev, start: newStart, end: moment(newStart).add(ev.duration, 'minutes').toDate(), resourceId: newStaffId } : ev));
 
         try { 
-            // FIXED: Using correct API path
             await fetch(`${API_BASE_URL}/api/bookings/${eventId}`, { 
                 method: 'PATCH', 
                 headers: { 'Content-Type': 'application/json' }, 
@@ -129,7 +123,6 @@ export default function Planning({ onBack, role }) {
 
     const handleDeleteEvent = async (id) => {
         try { 
-            // FIXED: Using correct API path
             await fetch(`${API_BASE_URL}/api/bookings/${id}`, { method: 'DELETE' }); 
             setModalInitialData(null); 
             loadData(); 
@@ -163,10 +156,11 @@ export default function Planning({ onBack, role }) {
                 </div>
                 <div><button onClick={() => setModalInitialData({ date: new Date() })} style={{background:'#EC4899', color:'white', border:'none', padding:'8px 12px', borderRadius:8, cursor:'pointer', fontWeight:'bold', display:'flex', gap:5, alignItems:'center'}}><Plus size={20}/> <span className="add-btn-text">Nouveau</span></button></div>
             </div>
+            {/* THIS IS THE CORRECTED PART */}
             <div style={{flex:1, position:'relative', overflow: 'hidden'}}>
                 {currentView === 'day' && <PlanningDay events={events} resources={resources} date={currentDate} setDate={setCurrentDate} onEventMove={handleMoveEvent} onEventClick={handleEventClick} onGridClick={handleGridClick} />}
                 {currentView === 'week' && <PlanningWeek events={events} date={currentDate} setDate={setCurrentDate} onEventClick={handleEventClick} />}
-                {currentVView === 'month' && <PlanningMonth events={events} date={currentDate} setDate={setCurrentDate} onEventClick={handleEventClick} />}
+                {currentView === 'month' && <PlanningMonth events={events} date={currentDate} setDate={setCurrentDate} onEventClick={handleEventClick} />}
             </div>
             <BookingModal isOpen={!!modalInitialData} onClose={() => setModalInitialData(null)} staffList={resources} onSave={handleSaveBooking} initialData={modalInitialData} onDelete={handleDeleteEvent} />
         </div>
