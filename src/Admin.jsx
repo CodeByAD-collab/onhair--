@@ -5,6 +5,7 @@ import Planning from './Planning';
 import Staff from './Staff';
 import Caisse from './Caisse'; 
 import Clients from './Clients';
+import WhatsAppSettings from './WhatsAppSettings'; // <--- ADDED THIS IMPORT
 import { Lock, Mail, Menu } from 'lucide-react';
 
 export default function Admin() {
@@ -21,7 +22,6 @@ export default function Admin() {
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
 
-    // --- ÉTAPE 1 : VÉRIFIER SI L'UTILISATEUR EST DÉJÀ CONNECTÉ AU DÉMARRAGE ---
     useEffect(() => {
         const savedUser = localStorage.getItem('onhair_session');
         if (savedUser) {
@@ -59,17 +59,14 @@ export default function Admin() {
             setCurrentUser(authenticatedUser.name);
             setViewMode('planning'); 
             setIsLoggedIn(true);
-            
-            // --- ÉTAPE 2 : ENREGISTRER LA SESSION ---
             localStorage.setItem('onhair_session', JSON.stringify(authenticatedUser));
         } else {
             setError("Email ou mot de passe incorrect");
         }
     };
 
-    // --- ÉTAPE 3 : FONCTION DE DÉCONNEXION ---
     const handleLogout = () => {
-        localStorage.removeItem('onhair_session'); // Efface la mémoire
+        localStorage.removeItem('onhair_session');
         setIsLoggedIn(false);
         setRole('');
         setCurrentUser('');
@@ -115,15 +112,14 @@ export default function Admin() {
                 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
                 html, body { overflow-x: hidden; width: 100%; position: relative; }
                 .admin-container { display: flex; height: 100vh; width: 100vw; background: black; color: white; overflow: hidden; }
-                .sidebar-wrapper { width: 260px; background: #151E2E; flex-shrink: 0; }
+                .sidebar-wrapper { width: 260px; background: #050505; flex-shrink: 0; }
                 .mobile-header { display: none; }
                 @media (max-width: 768px) {
                     .admin-container { flex-direction: column; }
                     .sidebar-wrapper { position: fixed; top: 0; bottom: 0; width: 280px; left: -300px; transition: left 0.3s ease; z-index: 5000; box-shadow: 5px 0 15px rgba(0,0,0,0.5); }
                     .sidebar-wrapper.open { left: 0; }
-                    .mobile-header { display: flex; align-items: center; justify-content: space-between; height: 60px; padding: 0 20px; background: #151E2E; border-bottom: 1px solid #374151; flex-shrink: 0; }
+                    .mobile-header { display: flex; align-items: center; justify-content: space-between; height: 60px; padding: 0 20px; background: #050505; border-bottom: 1px solid #374151; flex-shrink: 0; }
                     .menu-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 4000; }
-                    input, select, textarea { font-size: 16px !important; }
                 }
             `}</style>
 
@@ -135,7 +131,7 @@ export default function Admin() {
                 <Sidebar 
                     viewMode={viewMode} 
                     setViewMode={setViewMode} 
-                    setIsLoggedIn={handleLogout} // MODIFIÉ : On utilise handleLogout ici
+                    setIsLoggedIn={handleLogout}
                     role={role}
                     currentUser={currentUser} 
                     isMobile={isMobile}
@@ -157,11 +153,13 @@ export default function Admin() {
                     {viewMode === 'finance' && role === 'superadmin' && <Caisse />}
                     {viewMode === 'staff' && role === 'superadmin' && <Staff />}
                     {viewMode === 'clients' && role === 'superadmin' && <Clients />}
+                    {viewMode === 'whatsapp' && role === 'superadmin' && <WhatsAppSettings />} {/* <--- ADDED THIS LINE */}
                     
                     {viewMode === 'planning' && (
                         <Planning role={role} onBack={() => setViewMode('dashboard')} />
                     )}
                     
+                    {/* Access Denied logic */}
                     {viewMode !== 'planning' && role === 'admin' && (
                         <div style={{padding:50, textAlign:'center'}}>Accès Refusé</div>
                     )}
@@ -176,5 +174,5 @@ const styles = {
     loginCard: { background:'#18181b', padding:40, borderRadius:16, width:350, border:'1px solid #333' },
     inputWrapper: { background:'#000', border:'1px solid #333', borderRadius:8, padding:'12px 15px', display:'flex', alignItems:'center', gap:10 },
     input: { background:'transparent', border:'none', color:'white', outline:'none', width:'100%', fontSize: '16px' },
-    loginBtn: { background: '#EC4899', color:'white', border:'none', padding:12, borderRadius:8, width:'100%', marginTop:10, fontWeight:'bold' }
+    loginBtn: { background: '#ef4444', color:'white', border:'none', padding:12, borderRadius:8, width:'100%', marginTop:10, fontWeight:'bold' }
 };

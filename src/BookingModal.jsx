@@ -10,6 +10,13 @@ const SERVICES_CONFIG = {
     "MASSAGE": [ { name: "Massage Relaxant 30min", duration: 30 }, { name: "Massage Relaxant 45min", duration: 45 }, { name: "Massage Relaxant 60min", duration: 60 }, { name: "Massage Nuque et épaules 15min", duration: 15 }, { name: "Massage cranien et faciale 15min", duration: 15 }, { name: "Massage des pieds 15min", duration: 15 } ],
 };
 
+// Hardcoded staff based on your request
+const STAFF_MEMBERS = [
+    { id: 'nabil', name: 'Nabil', role: 'Coiffeur Styliste' },
+    { id: 'fahd', name: 'Fahd', role: 'Expert Coiffure' },
+    { id: 'nezha', name: 'Nezha', role: 'Esthéticienne experte' }
+];
+
 const findService = (serviceName) => { 
     for (const category in SERVICES_CONFIG) { 
         const found = SERVICES_CONFIG[category].find(s => s.name === serviceName); 
@@ -19,10 +26,10 @@ const findService = (serviceName) => {
 };
 
 export default function BookingModal({ isOpen, onClose, staffList = [], onSave, initialData, onDelete }) {
-    // Initialisation avec des chaînes vides pour éviter l'erreur "uncontrolled input"
     const [formData, setFormData] = useState({
         id: null,
-        clientName: '',
+        firstName: '', // Split Name
+        lastName: '',  // Split Name
         phone: '',
         service: '',
         staff: '',
@@ -34,18 +41,25 @@ export default function BookingModal({ isOpen, onClose, staffList = [], onSave, 
     useEffect(() => {
         if (isOpen && initialData) {
             const defaultService = findService(initialData.service) || SERVICES_CONFIG["COIFFURE"][0];
+            
+            // Logic to split existing clientName "FirstName LastName" into two fields
+            const names = (initialData.clientName || '').split(' ');
+            const fName = names[0] || '';
+            const lName = names.slice(1).join(' ') || '';
+
             setFormData({
                 id: initialData.id || null, 
-                clientName: initialData.clientName || '', 
+                firstName: fName,
+                lastName: lName,
                 phone: initialData.phone || '',
                 service: defaultService.name, 
-                staff: initialData.staff || (staffList.length > 0 ? staffList[0].id : ''),
+                staff: initialData.staff || STAFF_MEMBERS[0].id,
                 date: moment(initialData.date).format('YYYY-MM-DD'), 
                 time: moment(initialData.date).format('HH:mm'),
                 duration: initialData.duration || defaultService.duration,
             });
         }
-    }, [isOpen, initialData, staffList]);
+    }, [isOpen, initialData]);
 
     if (!isOpen) return null;
 
@@ -57,7 +71,12 @@ export default function BookingModal({ isOpen, onClose, staffList = [], onSave, 
 
     const handleSubmit = (e) => { 
         e.preventDefault(); 
-        onSave(formData); 
+        // Combine names back for the save function
+        const finalData = {
+            ...formData,
+            clientName: `${formData.firstName} ${formData.lastName}`.trim()
+        };
+        onSave(finalData); 
     };
 
     const handleDelete = () => { 
@@ -72,37 +91,49 @@ export default function BookingModal({ isOpen, onClose, staffList = [], onSave, 
         <div style={styles.overlay}>
             <div style={styles.modal}>
                 <div style={styles.header}>
-                    <h2 style={{margin:0}}>{isEditing ? 'Modifier la Réservation' : 'Nouvelle Réservation'}</h2>
+                    <h2 style={{margin:0, fontSize: '18px'}}>{isEditing ? 'Modifier la Réservation' : 'Nouvelle Réservation'}</h2>
                     <button onClick={onClose} style={styles.closeBtn}><X size={24} /></button>
                 </div>
                 <form onSubmit={handleSubmit} style={styles.form}>
+                    {/* First Row: Nom and Prénom */}
                     <div style={styles.row}>
                         <div style={styles.group}>
-                            <label style={styles.label}><User size={14}/> Client</label>
+                            <label style={styles.label}><User size={14}/> Prénom</label>
                             <input 
                                 required 
-                                placeholder="Prénom Nom" 
+                                placeholder="Prénom" 
                                 style={styles.input} 
-                                value={formData.clientName || ''} 
-                                onChange={e => setFormData({...formData, clientName: e.target.value})} 
+                                value={formData.firstName} 
+                                onChange={e => setFormData({...formData, firstName: e.target.value})} 
                             />
                         </div>
+                        <div style={styles.group}>
+                            <label style={styles.label}><User size={14}/> Nom</label>
+                            <input 
+                                required 
+                                placeholder="Nom" 
+                                style={styles.input} 
+                                value={formData.lastName} 
+                                onChange={e => setFormData({...formData, lastName: e.target.value})} 
+                            />
+                        </div>
+                    </div>
+
+                    <div style={styles.row}>
                         <div style={styles.group}>
                             <label style={styles.label}><Phone size={14}/> Téléphone</label>
                             <input 
                                 placeholder="06..." 
                                 style={styles.input} 
-                                value={formData.phone || ''} 
+                                value={formData.phone} 
                                 onChange={e => setFormData({...formData, phone: e.target.value})} 
                             />
                         </div>
-                    </div>
-                    <div style={styles.row}>
                         <div style={styles.group}>
                             <label style={styles.label}><Scissors size={14}/> Service</label>
                             <select 
                                 style={styles.select} 
-                                value={formData.service || ''} 
+                                value={formData.service} 
                                 onChange={handleServiceChange}
                             >
                                 <option value="" disabled>Choisir un service...</option>
@@ -115,27 +146,30 @@ export default function BookingModal({ isOpen, onClose, staffList = [], onSave, 
                                 ))}
                             </select>
                         </div>
-                        <div style={styles.group}>
-                            <label style={styles.label}><User size={14}/> Coiffeur</label>
+                    </div>
+
+                    <div style={styles.row}>
+                        <div style={{...styles.group, flex: '1 1 100%'}}>
+                            <label style={styles.label}><User size={14}/> Coiffeur / Esthéticienne</label>
                             <select 
-                                style={styles.select} 
-                                value={formData.staff || ''} 
+                                style={{...styles.select, fontSize: '13px'}} 
+                                value={formData.staff} 
                                 onChange={e => setFormData({...formData, staff: e.target.value})}
                             >
-                                <option value="" disabled>Choisir...</option>
-                                {staffList.map(s => ( 
-                                    <option key={s.id} value={s.id}>{s.title}</option>
+                                {STAFF_MEMBERS.map(s => ( 
+                                    <option key={s.id} value={s.id}>{s.name} — {s.role}</option>
                                 ))}
                             </select>
                         </div>
                     </div>
+
                     <div style={styles.row}>
                         <div style={styles.group}>
                             <label style={styles.label}><Calendar size={14}/> Date</label>
                             <input 
                                 type="date" 
                                 style={styles.input} 
-                                value={formData.date || ''} 
+                                value={formData.date} 
                                 onChange={e => setFormData({...formData, date: e.target.value})} 
                             />
                         </div>
@@ -145,7 +179,7 @@ export default function BookingModal({ isOpen, onClose, staffList = [], onSave, 
                                 type="time" 
                                 step="900" 
                                 style={styles.input} 
-                                value={formData.time || ''} 
+                                value={formData.time} 
                                 onChange={e => setFormData({...formData, time: e.target.value})} 
                             />
                         </div>
@@ -153,7 +187,7 @@ export default function BookingModal({ isOpen, onClose, staffList = [], onSave, 
                             <label style={styles.label}><Clock size={14}/> Durée</label>
                             <select 
                                 style={styles.select} 
-                                value={formData.duration || 30} 
+                                value={formData.duration} 
                                 onChange={e => setFormData({...formData, duration: parseInt(e.target.value)})}
                             >
                                 { [15, 30, 45, 60, 75, 90, 120, 150, 180, 240].map(d => (
@@ -181,16 +215,16 @@ export default function BookingModal({ isOpen, onClose, staffList = [], onSave, 
 
 const styles = { 
     overlay: { position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.8)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 10000, backdropFilter: 'blur(5px)' }, 
-    modal: { backgroundColor: '#18181b', width: '90%', maxWidth: '600px', borderRadius: '16px', border: '1px solid #27272a', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)', overflow: 'hidden' }, 
-    header: { padding: '20px', borderBottom: '1px solid #27272a', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#27272a', color: 'white' }, 
+    modal: { backgroundColor: '#18181b', width: '95%', maxWidth: '550px', borderRadius: '16px', border: '1px solid #27272a', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)', overflow: 'hidden' }, 
+    header: { padding: '15px 20px', borderBottom: '1px solid #27272a', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#27272a', color: 'white' }, 
     closeBtn: { background: 'transparent', border: 'none', color: 'white', cursor: 'pointer' }, 
-    form: { padding: '25px', display: 'flex', flexDirection: 'column', gap: '20px' }, 
-    row: { display: 'flex', gap: '15px', flexWrap: 'wrap' }, 
-    group: { flex: '1 1 150px', display: 'flex', flexDirection: 'column', gap: '8px' }, 
-    label: { color: '#a1a1aa', fontSize: '12px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '5px' }, 
+    form: { padding: '20px', display: 'flex', flexDirection: 'column', gap: '15px' }, 
+    row: { display: 'flex', gap: '12px', flexWrap: 'wrap' }, 
+    group: { flex: '1 1 120px', display: 'flex', flexDirection: 'column', gap: '6px' }, 
+    label: { color: '#a1a1aa', fontSize: '11px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '5px', textTransform: 'uppercase' }, 
     input: { background: '#27272a', border: '1px solid #3f3f46', color: 'white', padding: '10px', borderRadius: '8px', outline: 'none', fontSize: '14px' }, 
     select: { background: '#27272a', border: '1px solid #3f3f46', color: 'white', padding: '10px', borderRadius: '8px', outline: 'none', fontSize: '14px' }, 
     footer: { display: 'flex', gap: '10px', marginTop: '10px' }, 
-    deleteBtn: { padding: '12px', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid #ef4444', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontWeight:'bold', fontSize: '14px' }, 
+    deleteBtn: { padding: '12px', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid #ef4444', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontWeight:'bold', fontSize: '13px' }, 
     submitBtn: { flex: 1, background: '#EC4899', color: 'white', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px' } 
 };

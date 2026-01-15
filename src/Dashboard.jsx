@@ -1,184 +1,135 @@
 import React, { useEffect, useState } from 'react';
-import { Calendar, TrendingUp, Users, Clock } from 'lucide-react';
-import moment from 'moment'; // CETTE LIGNE ÉTAIT MANQUANTE
+import { Clock, Users } from 'lucide-react';
+import moment from 'moment';
+
+const STAFF_LIST = ["Nabil", "Fahd", "Nezha"];
 
 export default function Dashboard() {
     const [stats, setStats] = useState({ 
-        revenueToday: 0, 
         appointmentsToday: 0, 
-        staffPerformance: [], 
-        nextClient: null, 
-        recentBookings: [] 
+        groupedBookings: { "Nabil": [], "Fahd": [], "Nezha": [], "Autres": [] }
     });
 
     useEffect(() => { 
         loadDashboardData(); 
+        const interval = setInterval(loadDashboardData, 30000); 
+        return () => clearInterval(interval);
     }, []);
 
     const loadDashboardData = async () => {
         try {
-            // Utilisation de l'adresse locale
             const res = await fetch('https://onhair.onrender.com/api/bookings');
             const data = await res.json();
             const bookings = data.data || [];
-            
-            // Correction de la date pour correspondre au fuseau horaire local (Maroc)
-            const today = new Date();
-            const offset = today.getTimezoneOffset();
-            const localToday = new Date(today.getTime() - (offset * 60 * 1000));
-            const todayStr = localToday.toISOString().split('T')[0];
+            const todayStr = moment().format('YYYY-MM-DD');
 
-            // Filtrage des réservations d'aujourd'hui
             const todayBookings = bookings.filter(b => {
-                const bookingDate = b.date && b.date.includes('T') ? b.date.split('T')[0] : b.date;
-                return bookingDate === todayStr;
+                const bDate = b.date && b.date.includes('T') ? b.date.split('T')[0] : b.date;
+                return bDate === todayStr;
             });
 
-            // Calcul du chiffre d'affaires du jour
-            const revenue = todayBookings.reduce((a, c) => a + (parseFloat(c.price) || 0), 0);
-            
-            // Performance du staff
-            const staffCount = {};
+            const groups = { "Nabil": [], "Fahd": [], "Nezha": [], "Autres": [] };
             todayBookings.forEach(b => {
-                if (b.staff) {
-                    staffCount[b.staff] = (staffCount[b.staff] || 0) + 1;
-                }
+                const staffName = b.staff || "Autres";
+                const matchingStaff = STAFF_LIST.find(s => staffName.toLowerCase().includes(s.toLowerCase()));
+                if (matchingStaff) groups[matchingStaff].push(b);
+                else groups["Autres"].push(b);
             });
-            const staffPerf = Object.keys(staffCount).map(n => ({ name: n, count: staffCount[n] }));
 
-            // Calcul du prochain client
-            const nowTime = new Date().toTimeString().substring(0, 5);
-            const nextC = todayBookings
-                .filter(b => b.time >= nowTime)
-                .sort((a, b) => a.time.localeCompare(b.time))[0];
+            Object.keys(groups).forEach(key => groups[key].sort((a, b) => a.time.localeCompare(b.time)));
 
             setStats({
-                revenueToday: revenue,
                 appointmentsToday: todayBookings.length,
-                staffPerformance: staffPerf,
-                nextClient: nextC,
-                recentBookings: bookings.slice(0, 10) 
+                groupedBookings: groups
             });
-        } catch (e) { 
-            console.error("Erreur Dashboard:", e); 
-        }
+        } catch (e) { console.error("Erreur Dashboard:", e); }
     };
 
     return (
         <div className="dashboard-container">
             <style>{`
-                .dashboard-container { padding: 20px; background: #000; min-height: 100vh; color: white; font-family: 'Inter', sans-serif; }
-                .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 20px; }
-                .bottom-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 20px; }
+                .dashboard-container { padding: 40px; background: #050505; min-height: 100vh; color: #fff; font-family: 'Inter', sans-serif; }
+                .dash-header { margin-bottom: 40px; display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 1px solid #1a1a1a; padding-bottom: 20px; }
+                .dash-title { font-size: 32px; font-weight: 900; letter-spacing: -1px; margin: 0; background: linear-gradient(to right, #fff, #666); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
                 
-                @media (max-width: 900px) {
-                    .stats-grid { grid-template-columns: 1fr; }
-                    .bottom-grid { grid-template-columns: 1fr; }
-                }
+                .staff-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 25px; }
+                @media (max-width: 1100px) { .staff-grid { grid-template-columns: 1fr; } }
 
-                .stat-card { background: #18181b; border-radius: 16px; padding: 20px; border: 1px solid #27272a; position: relative; overflow: hidden; }
-                .table-container { overflow-x: auto; background: #18181b; padding: 15px; border-radius: 16px; border: 1px solid #27272a; }
-                table { width: 100%; border-collapse: collapse; min-width: 500px; }
-                th { text-align: left; color: #888; font-size: 12px; border-bottom: 1px solid #333; padding-bottom: 10px; text-transform: uppercase; }
-                td { padding: 12px 0; border-bottom: 1px solid #27272a; font-size: 14px; }
+                .staff-card { background: #0a0a0a; border-radius: 24px; border: 1px solid #1a1a1a; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative; overflow: hidden; }
+                .staff-card:hover { border-color: #ef4444; transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
                 
-                .progress-bg { height: 6px; background: #333; border-radius: 5px; width: 100%; margin-top: 5px; }
-                .progress-bar { height: 100%; background: #EC4899; border-radius: 5px; transition: width 0.5s ease; }
+                .staff-header { padding: 25px; background: linear-gradient(180deg, #111 0%, #0a0a0a 100%); display: flex; flex-direction: column; gap: 5px; border-bottom: 1px solid #1a1a1a; }
+                .staff-name { font-weight: 800; font-size: 20px; color: #fff; letter-spacing: 0.5px; }
+                .staff-meta { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #ef4444; font-weight: 700; text-transform: uppercase; }
+
+                .booking-list { padding: 20px; max-height: 500px; overflow-y: auto; }
+                .booking-item { background: #111; padding: 16px; border-radius: 16px; margin-bottom: 12px; border: 1px solid #1a1a1a; transition: background 0.2s; }
+                .booking-item:hover { background: #151515; }
+                
+                .booking-time { color: #d4af37; font-weight: 800; font-size: 14px; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+                .booking-client { font-weight: 600; font-size: 16px; color: #fff; text-transform: capitalize; }
+                .booking-service { color: #555; font-size: 13px; margin-top: 5px; display: block; }
+
+                .empty-state { padding: 60px 20px; text-align: center; color: #222; font-size: 14px; font-weight: 500; }
+                .total-badge { background: #111; border: 1px solid #1a1a1a; padding: 8px 16px; border-radius: 100px; font-size: 12px; font-weight: 700; color: #666; }
+                .total-badge b { color: #ef4444; margin-right: 4px; }
             `}</style>
 
-            <h1 style={{ marginTop: 0, marginBottom: 5 }}>Tableau de Bord</h1>
-            <p style={{ color: '#666', marginBottom: 20 }}>Aujourd'hui chez OnHair</p>
-
-            <div className="stats-grid">
-                <div className="stat-card" style={{ background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)', border: 'none' }}>
-                    <div style={{ fontSize: 12, fontWeight: 'bold', color: 'rgba(255,255,255,0.8)' }}>CHIFFRE D'AFFAIRES (JOUR)</div>
-                    <div className="card-value" style={{ fontSize: 32, fontWeight: 'bold', marginTop: 5 }}>{stats.revenueToday.toLocaleString()} MAD</div>
-                    <TrendingUp size={80} color="white" style={{ position: 'absolute', right: -10, bottom: -10, opacity: 0.2 }} />
-                </div>
-
-                <div className="stat-card" style={{ display: 'flex', alignItems: 'center', gap: 15 }}>
-                    <div style={{ background: '#27272a', padding: 12, borderRadius: 10 }}>
-                        <Calendar size={24} color="#EC4899" />
-                    </div>
-                    <div>
-                        <div className="card-value" style={{ fontSize: 28, fontWeight: 'bold' }}>{stats.appointmentsToday}</div>
-                        <div style={{ fontSize: 12, color: '#888' }}>Rendez-vous aujourd'hui</div>
+            <div className="dash-header">
+                <div>
+                    <h1 className="dash-title">Planning du Jour</h1>
+                    <div style={{ color: '#444', fontSize: '14px', marginTop: '5px', fontWeight: 500 }}>
+                        {moment().format('dddd D MMMM YYYY')}
                     </div>
                 </div>
-
-                <div className="stat-card">
-                    <div style={{ color: '#8B5CF6', fontSize: 12, fontWeight: 'bold', marginBottom: 5, display: 'flex', gap: 5, alignItems: 'center' }}>
-                        <Clock size={14} /> PROCHAIN CLIENT
-                    </div>
-                    {stats.nextClient ? (
-                        <>
-                            <div style={{ fontWeight: 'bold', fontSize: 18 }}>{stats.nextClient.name}</div>
-                            <div style={{ color: '#888', fontSize: 13 }}>{stats.nextClient.service_name} à {stats.nextClient.time}</div>
-                        </>
-                    ) : (
-                        <div style={{ color: '#555', fontStyle: 'italic', marginTop: 10 }}>Aucun autre RDV prévu</div>
-                    )}
+                <div className="total-badge">
+                    <b>{stats.appointmentsToday}</b> RÉSERVATIONS AU TOTAL
                 </div>
             </div>
 
-            <div className="bottom-grid">
-                <div className="stat-card">
-                    <h3 style={{ marginTop: 0, marginBottom: 20, fontSize: 16 }}>Performance Staff (Jour)</h3>
-                    {stats.staffPerformance.length === 0 ? (
-                        <div style={{ color: '#555', textAlign: 'center', padding: '20px' }}>Aucune donnée aujourd'hui</div>
-                    ) : (
-                        stats.staffPerformance.map((s, i) => (
-                            <div key={i} style={{ marginBottom: 20 }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
-                                    <span style={{ fontSize: 14 }}>{s.name}</span>
-                                    <span style={{ color: '#EC4899', fontWeight: 'bold', fontSize: 14 }}>{s.count} RDV</span>
-                                </div>
-                                <div className="progress-bg">
-                                    <div 
-                                        className="progress-bar" 
-                                        style={{ width: `${(s.count / (stats.appointmentsToday || 1)) * 100}%` }}
-                                    ></div>
-                                </div>
+            <div className="staff-grid">
+                {STAFF_LIST.map(staffName => (
+                    <div key={staffName} className="staff-card">
+                        <div className="staff-header">
+                            <div className="staff-meta">
+                                <Users size={12} /> {stats.groupedBookings[staffName].length} RDV aujourd'hui
                             </div>
-                        ))
-                    )}
-                </div>
-
-                <div className="table-container">
-                    <h3 style={{ marginTop: 0, marginBottom: 15, fontSize: 16 }}>Dernières Réservations</h3>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>HEURE / DATE</th>
-                                <th>CLIENT</th>
-                                <th>SERVICE</th>
-                                <th>STAFF</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {stats.recentBookings.length === 0 ? (
-                                <tr><td colSpan="4" style={{ textAlign: 'center', color: '#555', padding: '20px' }}>Aucune réservation trouvée</td></tr>
-                            ) : (
-                                stats.recentBookings.map(b => (
-                                    <tr key={b.id}>
-                                        <td>
-                                            <div style={{ fontWeight: 'bold', color: '#fff' }}>{b.time}</div>
-                                            <div style={{ fontSize: 11, color: '#666' }}>{moment(b.date).format('DD/MM/YYYY')}</div>
-                                        </td>
-                                        <td>{b.name}</td>
-                                        <td>
-                                            <span style={{ background: '#27272a', padding: '4px 8px', borderRadius: 6, fontSize: 12, border: '1px solid #333' }}>
-                                                {b.service_name}
-                                            </span>
-                                        </td>
-                                        <td style={{ color: '#EC4899', fontWeight: 'bold' }}>{b.staff}</td>
-                                    </tr>
+                            <span className="staff-name">{staffName}</span>
+                        </div>
+                        <div className="booking-list">
+                            {stats.groupedBookings[staffName].length > 0 ? (
+                                stats.groupedBookings[staffName].map((b, idx) => (
+                                    <div key={idx} className="booking-item">
+                                        <div className="booking-time">
+                                            <Clock size={14} /> {b.time}
+                                        </div>
+                                        <div className="booking-client">{b.name}</div>
+                                        <span className="booking-service">{b.service_name}</span>
+                                    </div>
                                 ))
+                            ) : (
+                                <div className="empty-state">Planning disponible</div>
                             )}
-                        </tbody>
-                    </table>
-                </div>
+                        </div>
+                    </div>
+                ))}
             </div>
+
+            {/* Bottom section for unassigned bookings */}
+            {stats.groupedBookings["Autres"].length > 0 && (
+                <div style={{ marginTop: '50px' }}>
+                    <h3 style={{ fontSize: '12px', color: '#333', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '20px' }}>Non Assignés</h3>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '20px' }}>
+                        {stats.groupedBookings["Autres"].map((b, idx) => (
+                            <div key={idx} className="booking-item" style={{ borderLeft: '2px solid #ef4444' }}>
+                                <div className="booking-time"><Clock size={14} /> {b.time}</div>
+                                <div className="booking-client">{b.name}</div>
+                                <span className="booking-service">{b.service_name}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
