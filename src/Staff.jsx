@@ -1,22 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2 } from 'lucide-react'; // J'ai ajouté Trash2
+import { Plus, Trash2, Edit, FileText, CheckCircle, Ban, Save, X, User } from 'lucide-react';
 
-export default function Staff({ bookings = [] }) { 
+export default function Staff() {
     const [staffList, setStaffList] = useState([]);
     const [showAddModal, setShowAddModal] = useState(false);
-    const [newStaff, setNewStaff] = useState({ name: '', color: '#EC4899', special: '' });
+    const [editingNotes, setEditingNotes] = useState(null); // For technical file modal
+    const [noteText, setNoteText] = useState('');
+    const [newStaff, setNewStaff] = useState({ name: '', color: '#ef4444', special: '', notes: '', isAbsent: false });
 
-    useEffect(() => {
-        fetchStaff();
-    }, []);
+    useEffect(() => { fetchStaff(); }, []);
 
     const fetchStaff = () => {
         fetch('https://onhair.onrender.com/api/staff')
             .then(res => res.json())
-            .then(data => {
-                setStaffList(data.data || []);
-            })
-            .catch(err => console.error("Erreur chargement staff:", err));
+            .then(data => setStaffList(data.data || []))
+            .catch(err => console.error("Erreur:", err));
     };
 
     const handleAddStaff = (e) => {
@@ -25,150 +23,165 @@ export default function Staff({ bookings = [] }) {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(newStaff)
-        })
-        .then(res => res.json())
-        .then(() => {
-            fetchStaff(); 
+        }).then(() => {
+            fetchStaff();
             setShowAddModal(false);
-            setNewStaff({ name: '', color: '#EC4899', special: '' });
+            setNewStaff({ name: '', color: '#ef4444', special: '', notes: '', isAbsent: false });
         });
     };
 
-    // --- FONCTION DE SUPPRESSION ---
     const handleDeleteStaff = (id, name) => {
-        if(!window.confirm(`Voulez-vous vraiment supprimer ${name} ?`)) return;
-        
-        fetch(`https://onhair.onrender.com/api/staff/${id}`, { method: 'DELETE' })
-            .then(() => fetchStaff());
+        if (!window.confirm(`Supprimer définitivement ${name} ?`)) return;
+        fetch(`https://onhair.onrender.com/api/staff/${id}`, { method: 'DELETE' }).then(() => fetchStaff());
     };
 
-    const realStaffData = staffList.map(staff => {
-        return { ...staff, dayOff: "Lundi", title: staff.name };
-    });
+    const toggleAbsence = (staff) => {
+        const updated = { ...staff, isAbsent: !staff.isAbsent };
+        updateStaffData(staff.id, updated);
+    };
+
+    const updateStaffData = (id, data) => {
+        fetch(`https://onhair.onrender.com/api/staff/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        }).then(() => fetchStaff());
+    };
+
+    const openNotes = (staff) => {
+        setEditingNotes(staff);
+        setNoteText(staff.notes || '');
+    };
+
+    const saveNotes = () => {
+        updateStaffData(editingNotes.id, { ...editingNotes, notes: noteText });
+        setEditingNotes(null);
+    };
 
     return (
         <div className="staff-container">
-            {/* --- RESPONSIVE CSS --- */}
             <style>{`
-                .staff-container { padding: 30px; color: white; background: #0B0F19; min-height: 100%; font-family: 'Inter', sans-serif; overflow-y: auto; }
+                .staff-container { padding: 40px; background: #000; min-height: 100vh; color: white; font-family: 'Inter', sans-serif; }
+                .staff-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; margin-top: 30px; }
                 
-                /* HEADER */
-                .staff-header { 
-                    display: flex; 
-                    justify-content: space-between; 
-                    align-items: center; 
-                    margin-bottom: 30px;
-                }
-                
-                /* GRID SYSTEM (2 COLONNES) */
-                .staff-grid { 
-                    display: grid; 
-                    grid-template-columns: repeat(2, 1fr); 
-                    gap: 24px; 
-                }
-
-                /* CARD STYLES */
                 .staff-card { 
-                    background: #151E2E; 
-                    padding: 24px; 
-                    border-radius: 20px; 
-                    border: 1px solid #374151; 
+                    background: #0a0a0a; border: 1px solid #1a1a1a; border-radius: 15px; padding: 25px; 
+                    transition: 0.3s; position: relative; overflow: hidden;
+                }
+                .staff-card.absent { opacity: 0.5; border-color: #ef444433; }
+                
+                .status-badge { 
+                    position: absolute; top: 15px; right: 15px; padding: 4px 10px; border-radius: 5px; 
+                    font-size: 10px; font-weight: bold; text-transform: uppercase;
                 }
 
-                /* DELETE BUTTON */
-                .delete-btn {
-                    background: rgba(239, 68, 68, 0.1); 
-                    color: #EF4444; 
-                    border: none; 
-                    padding: 8px; 
-                    border-radius: 8px; 
-                    cursor: pointer;
-                    transition: 0.2s;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                }
-                .delete-btn:hover {
-                    background: rgba(239, 68, 68, 0.3);
+                .avatar-large { 
+                    width: 60px; height: 60px; borderRadius: 50%; display: flex; 
+                    align-items: center; justify-content: center; font-size: 24px; font-weight: bold; margin-bottom: 15px;
                 }
 
-                /* --- MOBILE (Max 900px) --- */
-                @media (max-width: 900px) {
-                    .staff-container { padding: 15px; }
-                    .staff-header { flex-direction: column; align-items: flex-start; gap: 15px; }
-                    .staff-grid { grid-template-columns: 1fr; }
+                .btn-icon { 
+                    background: #111; border: 1px solid #222; color: white; padding: 8px; 
+                    border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+                }
+                .btn-icon:hover { background: #1a1a1a; border-color: #ef4444; color: #ef4444; }
+
+                .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(10px); }
+                .modal-content { background: #0a0a0a; border: 1px solid #222; padding: 30px; border-radius: 20px; width: 450px; }
+
+                @media (max-width: 768px) {
+                    .staff-container { padding: 20px; }
+                    .header-row { flex-direction: column; gap: 20px; align-items: flex-start !important; }
                 }
             `}</style>
-            
+
             {/* HEADER */}
-            <div className="staff-header">
+            <div className="header-row" style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
                 <div>
-                    <h1 style={{fontSize:28, fontWeight:800, margin:0}}>Gestion Staff</h1>
-                    <span style={{color:'#9CA3AF', fontSize:14}}>Gérez votre équipe</span>
+                    <h1 style={{margin:0, fontSize:32}}><span style={{color:'#ef4444'}}>ON</span> STAFF</h1>
+                    <p style={{color:'#444', margin:'5px 0 0 0'}}>Gestion des présences et fiches techniques</p>
                 </div>
-                <button onClick={() => setShowAddModal(true)} style={{display:'flex', alignItems:'center', gap:8, padding:'10px 20px', borderRadius:'10px', background:'linear-gradient(90deg, #EC4899 0%, #8B5CF6 100%)', color:'white', border:'none', fontWeight:700, cursor:'pointer'}}>
-                    <Plus size={18}/> Nouveau Membre
+                <button onClick={() => setShowAddModal(true)} style={{background:'#ef4444', color:'white', border:'none', padding:'12px 25px', borderRadius:12, fontWeight:'bold', cursor:'pointer', display:'flex', gap:10, alignItems:'center'}}>
+                    <Plus size={20}/> Nouveau Membre
                 </button>
             </div>
-            
-            {/* GRID CONTENT */}
+
+            {/* GRID */}
             <div className="staff-grid">
-                
-                {/* 1. LISTE MEMBRES (AVEC SUPPRESSION) */}
-                <div className="staff-card">
-                    <h3 style={{ margin: 0, fontSize:16, fontWeight:700, paddingBottom:15, borderBottom:'1px solid #374151' }}>Membres & Repos</h3>
-                    {realStaffData.map(staff => (
-                        <div key={staff.id} style={{ display:'flex', alignItems:'center', gap:15, marginTop:20 }}>
-                            <div style={{width:40, height:40, borderRadius:'50%', background: staff.color, display:'flex', justifyContent:'center', alignItems:'center', fontWeight:700}}>{staff.title.charAt(0)}</div>
-                            <div style={{flex:1}}>
-                                <div style={{ fontWeight: '600' }}>{staff.title}</div>
-                                <div style={{ fontSize: '13px', color: '#9CA3AF' }}>{staff.dayOff}</div>
-                            </div>
-                            
-                            {/* BOUTON SUPPRIMER ICI */}
-                            <button className="delete-btn" onClick={() => handleDeleteStaff(staff.id, staff.name)}>
-                                <Trash2 size={18} />
+                {staffList.map(staff => (
+                    <div key={staff.id} className={`staff-card ${staff.isAbsent ? 'absent' : ''}`}>
+                        <div className="status-badge" style={{background: staff.isAbsent ? '#ef4444' : '#10b981', color: 'white'}}>
+                            {staff.isAbsent ? 'Absent' : 'Présent'}
+                        </div>
+                        
+                        <div className="avatar-large" style={{background: staff.color, color: 'white'}}>
+                            {staff.name.charAt(0)}
+                        </div>
+
+                        <h3 style={{margin:'0 0 5px 0', fontSize:20}}>{staff.name}</h3>
+                        <p style={{margin:0, color:'#ef4444', fontSize:13, fontWeight:'bold', textTransform:'uppercase'}}>{staff.special}</p>
+
+                        <div style={{marginTop:20, paddingTop:20, borderTop:'1px solid #111', display:'flex', gap:10}}>
+                            <button className="btn-icon" onClick={() => toggleAbsence(staff)} title="Signaler Absence">
+                                {staff.isAbsent ? <CheckCircle size={18}/> : <Ban size={18}/>}
+                            </button>
+                            <button className="btn-icon" onClick={() => openNotes(staff)} title="Fiche Technique">
+                                <FileText size={18}/>
+                            </button>
+                            <button className="btn-icon" style={{marginLeft:'auto'}} onClick={() => handleDeleteStaff(staff.id, staff.name)}>
+                                <Trash2 size={18} color="#444"/>
                             </button>
                         </div>
-                    ))}
-                </div>
-
-                {/* 2. EXPERTISE */}
-                <div className="staff-card">
-                    <h3 style={{ margin: 0, fontSize:16, fontWeight:700, paddingBottom:15, borderBottom:'1px solid #374151' }}>Expertise</h3>
-                    {realStaffData.map(staff => (
-                        <div key={staff.id} style={{ display:'flex', alignItems:'center', gap:15, marginTop:20 }}>
-                            <div style={{width:40, height:40, borderRadius:'50%', background: staff.color, display:'flex', justifyContent:'center', alignItems:'center', fontWeight:700}}>{staff.title.charAt(0)}</div>
-                            <div style={{flex:1}}>
-                                <div style={{ fontWeight: '600' }}>{staff.title}</div>
-                                <span style={{ display:'inline-block', marginTop:4, background: 'rgba(139, 92, 246, 0.1)', color: '#8B5CF6', padding: '4px 10px', borderRadius: '6px', fontSize: '11px' }}>{staff.special}</span>
-                            </div>
-                        </div>
-                    ))}
-                </div>
+                    </div>
+                ))}
             </div>
 
-            {/* MODAL ADD */}
+            {/* MODAL: ADD STAFF */}
             {showAddModal && (
-                <div style={{position:'fixed', top:0, left:0, width:'100%', height:'100%', background:'rgba(0,0,0,0.7)', display:'flex', justifyContent:'center', alignItems:'center', zIndex:1000}}>
-                    <div style={{background:'#1F2937', padding:30, borderRadius:20, width:400, margin:20}}>
-                        <h2 style={{marginTop:0}}>Nouveau Staff</h2>
+                <div className="modal-overlay">
+                    <div className="modal-content">
+                        <div style={{display:'flex', justifyContent:'space-between', marginBottom:25}}>
+                            <h2 style={{margin:0, color:'white'}}>Recruter</h2>
+                            <X onClick={() => setShowAddModal(false)} style={{cursor:'pointer'}}/>
+                        </div>
                         <form onSubmit={handleAddStaff}>
-                            <input required placeholder="Nom" value={newStaff.name} onChange={e => setNewStaff({...newStaff, name: e.target.value})} style={{width:'100%', padding:12, marginBottom:15, background:'#111827', border:'1px solid #374151', color:'white', borderRadius:8, boxSizing:'border-box'}} />
-                            <input required placeholder="Spécialité" value={newStaff.special} onChange={e => setNewStaff({...newStaff, special: e.target.value})} style={{width:'100%', padding:12, marginBottom:15, background:'#111827', border:'1px solid #374151', color:'white', borderRadius:8, boxSizing:'border-box'}} />
+                            <input placeholder="Nom Complet" required value={newStaff.name} onChange={e => setNewStaff({...newStaff, name: e.target.value})} style={inputStyle} />
+                            <input placeholder="Expertise (ex: Coiffeur Styliste)" required value={newStaff.special} onChange={e => setNewStaff({...newStaff, special: e.target.value})} style={inputStyle} />
                             <div style={{display:'flex', gap:10, marginBottom:20}}>
-                                {['#EC4899', '#3B82F6', '#10B981', '#F59E0B', '#8B5CF6'].map(c => (
-                                    <div key={c} onClick={() => setNewStaff({...newStaff, color: c})} style={{width:30, height:30, borderRadius:'50%', background:c, cursor:'pointer', border: newStaff.color === c ? '2px solid white' : 'none'}}></div>
+                                {['#ef4444', '#3b82f6', '#a855f7', '#10b981', '#f59e0b'].map(c => (
+                                    <div key={c} onClick={() => setNewStaff({...newStaff, color: c})} style={{width:35, height:35, borderRadius:'50%', background:c, cursor:'pointer', border: newStaff.color === c ? '3px solid white' : 'none'}}></div>
                                 ))}
                             </div>
-                            <div style={{display:'flex', gap:10}}>
-                                <button type="button" onClick={() => setShowAddModal(false)} style={{flex:1, padding:12, background:'transparent', color:'#9CA3AF', border:'1px solid #374151', borderRadius:8, cursor:'pointer'}}>Annuler</button>
-                                <button type="submit" style={{flex:1, padding:12, background:'linear-gradient(90deg, #EC4899 0%, #8B5CF6 100%)', color:'white', border:'none', borderRadius:8, cursor:'pointer'}}>Ajouter</button>
-                            </div>
+                            <button type="submit" style={submitBtnStyle}>Ajouter au staff</button>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {/* MODAL: FICHE TECHNIQUE */}
+            {editingNotes && (
+                <div className="modal-overlay">
+                    <div className="modal-content" style={{width: 500}}>
+                        <div style={{display:'flex', justifyContent:'space-between', marginBottom:20}}>
+                            <h2 style={{margin:0, color:'#ef4444'}}>Fiche Technique: {editingNotes.name}</h2>
+                            <X onClick={() => setEditingNotes(null)} style={{cursor:'pointer'}}/>
+                        </div>
+                        <textarea 
+                            style={{...inputStyle, height: 200, paddingTop:15}} 
+                            value={noteText} 
+                            onChange={e => setNoteText(e.target.value)} 
+                            placeholder="Notes sur la performance, planning spécifique, ou remarques administratives..."
+                        />
+                        <div style={{display:'flex', gap:10, marginTop:10}}>
+                            <button onClick={() => setEditingNotes(null)} style={{...submitBtnStyle, background:'#111', color:'#444'}}>Annuler</button>
+                            <button onClick={saveNotes} style={submitBtnStyle}><Save size={18}/> Enregistrer</button>
+                        </div>
                     </div>
                 </div>
             )}
         </div>
     );
 }
+
+const inputStyle = { width: '100%', padding: '15px', marginBottom: '15px', background: '#000', border: '1px solid #222', color: 'white', borderRadius: '10px', boxSizing: 'border-box', outline: 'none' };
+const submitBtnStyle = { width: '100%', padding: '15px', background: '#ef4444', color: 'white', border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:10 };

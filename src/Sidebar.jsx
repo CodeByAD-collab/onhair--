@@ -1,5 +1,6 @@
 import React from 'react';
 import logo from './logo.jpg'; 
+import { BarChart2 } from 'lucide-react';
 import { 
     Users, 
     Calendar as CalIcon, 
@@ -8,7 +9,8 @@ import {
     Wallet, 
     User, 
     X, 
-    MessageSquare 
+    MessageSquare,
+    Settings as SettingsIcon // Added this
 } from 'lucide-react';
 
 export default function Sidebar({ viewMode, setViewMode, setIsLoggedIn, isMobile, closeMobileMenu }) {
@@ -18,7 +20,6 @@ export default function Sidebar({ viewMode, setViewMode, setIsLoggedIn, isMobile
         setIsLoggedIn(false);
     };
 
-    // Professional luxury style helper
     const getItemStyle = (mode) => ({
         padding: '14px 20px',
         borderRadius: '12px',
@@ -51,8 +52,6 @@ export default function Sidebar({ viewMode, setViewMode, setIsLoggedIn, isMobile
             borderRight: '1px solid #1a1a1a' 
         }}>
             <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:50}}>
-                
-                {/* --- LOGO --- */}
                 <div style={{ display: 'flex', alignItems: 'center' }}>
                     <img 
                         src={logo} 
@@ -89,9 +88,16 @@ export default function Sidebar({ viewMode, setViewMode, setIsLoggedIn, isMobile
                     <User size={18}/> Clients
                 </div>
 
-                {/* --- NEW WHATSAPP TAB --- */}
                 <div onClick={() => handleNavigation('whatsapp')} style={getItemStyle('whatsapp')}>
                     <MessageSquare size={18}/> Gestion WhatsApp
+                </div>
+
+                {/* --- NEW SETTINGS TAB --- */}
+                <div onClick={() => handleNavigation('settings')} style={getItemStyle('settings')}>
+                    <SettingsIcon size={18}/> Paramètres
+                </div>
+                <div onClick={() => handleNavigation('stats')} style={getItemStyle('stats')}>
+                <BarChart2 size={18}/> Statistiques
                 </div>
             </nav>
 

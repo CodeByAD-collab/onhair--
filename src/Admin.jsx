@@ -5,7 +5,9 @@ import Planning from './Planning';
 import Staff from './Staff';
 import Caisse from './Caisse'; 
 import Clients from './Clients';
-import WhatsAppSettings from './WhatsAppSettings'; // <--- ADDED THIS IMPORT
+import WhatsAppSettings from './WhatsAppSettings';
+import Settings from './Settings'; 
+import Statistics from './Statistics'; // <--- IMPORTED
 import { Lock, Mail, Menu } from 'lucide-react';
 
 export default function Admin() {
@@ -153,15 +155,20 @@ export default function Admin() {
                     {viewMode === 'finance' && role === 'superadmin' && <Caisse />}
                     {viewMode === 'staff' && role === 'superadmin' && <Staff />}
                     {viewMode === 'clients' && role === 'superadmin' && <Clients />}
-                    {viewMode === 'whatsapp' && role === 'superadmin' && <WhatsAppSettings />} {/* <--- ADDED THIS LINE */}
+                    {viewMode === 'whatsapp' && role === 'superadmin' && <WhatsAppSettings />}
+                    {viewMode === 'settings' && role === 'superadmin' && <Settings />}
+                    {viewMode === 'stats' && role === 'superadmin' && <Statistics />} {/* <--- ADDED LOGIC */}
                     
                     {viewMode === 'planning' && (
                         <Planning role={role} onBack={() => setViewMode('dashboard')} />
                     )}
                     
-                    {/* Access Denied logic */}
+                    {/* Access Denied logic for Nezha (admin role) */}
                     {viewMode !== 'planning' && role === 'admin' && (
-                        <div style={{padding:50, textAlign:'center'}}>Accès Refusé</div>
+                        <div style={{padding:50, textAlign:'center', color: '#666'}}>
+                            <h2>Accès Réservé</h2>
+                            <p>Vous n'avez pas les permissions pour consulter cette page.</p>
+                        </div>
                     )}
                 </div>
             </div>
@@ -174,5 +181,5 @@ const styles = {
     loginCard: { background:'#18181b', padding:40, borderRadius:16, width:350, border:'1px solid #333' },
     inputWrapper: { background:'#000', border:'1px solid #333', borderRadius:8, padding:'12px 15px', display:'flex', alignItems:'center', gap:10 },
     input: { background:'transparent', border:'none', color:'white', outline:'none', width:'100%', fontSize: '16px' },
-    loginBtn: { background: '#ef4444', color:'white', border:'none', padding:12, borderRadius:8, width:'100%', marginTop:10, fontWeight:'bold' }
+    loginBtn: { background: '#ef4444', color:'white', border:'none', padding:12, borderRadius:8, width:'100%', marginTop:10, fontWeight:'bold', cursor: 'pointer' }
 };
