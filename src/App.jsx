@@ -90,7 +90,7 @@ export default function App() {
     const waMessage = `Objet : Demande de réservation - ${serviceNames}
 
 Bonjour,
-Je souhaiterais prendre rendez-vous chez ON H'AIR STUDIO pour bénéficier d'un soin.
+Je souhaiterais prendre rendez-vous chez ON H'AIR SALON pour bénéficier d'un soin.
 
 *Mes coordonnées :*
 Nom : ${fullName}
