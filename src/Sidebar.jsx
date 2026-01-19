@@ -1,126 +1,86 @@
 import React from 'react';
 import logo from './logo.jpg'; 
-import { BarChart2 } from 'lucide-react';
-import { 
-    Users, 
-    Calendar as CalIcon, 
-    LogOut, 
-    LayoutDashboard, 
-    Wallet, 
-    User, 
-    X, 
-    MessageSquare,
-    Settings as SettingsIcon // Added this
-} from 'lucide-react';
+import { Users, Calendar, LogOut, LayoutDashboard, Wallet, User, X, MessageSquare, Settings, BarChart2 } from 'lucide-react';
 
-export default function Sidebar({ viewMode, setViewMode, setIsLoggedIn, isMobile, closeMobileMenu }) {
+export default function Sidebar({ viewMode, setViewMode, setIsLoggedIn, isMobile, closeMobileMenu, role }) {
     
-    const handleLogout = () => {
-        localStorage.removeItem('onhair_user');
-        setIsLoggedIn(false);
-    };
-
-    const getItemStyle = (mode) => ({
-        padding: '14px 20px',
-        borderRadius: '12px',
-        cursor: 'pointer',
-        display: 'flex',
-        gap: '12px',
-        alignItems: 'center',
-        fontSize: '14px',
-        fontWeight: '600',
-        transition: 'all 0.3s ease',
-        background: viewMode === mode ? 'rgba(239, 68, 68, 0.1)' : 'transparent',
-        color: viewMode === mode ? '#ef4444' : '#a1a1aa',
-        borderLeft: viewMode === mode ? '3px solid #ef4444' : '3px solid transparent',
-    });
-
-    const handleNavigation = (mode) => {
-        setViewMode(mode);
-        if (isMobile) closeMobileMenu();
-    };
+    const navItems = [
+        { id: 'planning', label: 'Planning', icon: Calendar, minRole: 'admin' },
+        { id: 'dashboard', label: 'Tableau de Bord', icon: LayoutDashboard, minRole: 'superadmin' },
+        { id: 'finance', label: 'Caisse', icon: Wallet, minRole: 'superadmin' },
+        { id: 'staff', label: 'Staff', icon: Users, minRole: 'superadmin' },
+        { id: 'clients', label: 'Clients', icon: User, minRole: 'superadmin' },
+        { id: 'whatsapp', label: 'WhatsApp', icon: MessageSquare, minRole: 'superadmin' },
+        { id: 'stats', label: 'Statistiques', icon: BarChart2, minRole: 'superadmin' },
+        { id: 'settings', label: 'Paramètres', icon: Settings, minRole: 'superadmin' },
+    ];
 
     return (
         <div style={{ 
-            background: '#050505', 
             height: '100%', 
-            width: '100%', 
-            padding: '30px 20px', 
             display: 'flex', 
             flexDirection: 'column', 
-            color: 'white', 
-            borderRight: '1px solid #1a1a1a' 
+            padding: '25px 15px', 
+            borderRight: '1px solid #1a1a1a',
+            boxSizing: 'border-box',
+            background: '#050505'
         }}>
-            <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:50}}>
-                <div style={{ display: 'flex', alignItems: 'center' }}>
-                    <img 
-                        src={logo} 
-                        alt="OnHair Logo" 
-                        style={{ height: '50px', width: 'auto', display: 'block', borderRadius: '8px' }} 
-                    />
-                </div>
-
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 40 }}>
+                <img src={logo} alt="OnHair" style={{ height: 40, borderRadius: 8 }} />
                 {isMobile && (
-                    <button onClick={closeMobileMenu} style={{background:'none', border:'none', color:'#a1a1aa'}}>
-                        <X size={24}/>
+                    <button onClick={closeMobileMenu} style={{background:'none', border:'none', color:'#666', cursor:'pointer'}}>
+                        <X size={24} />
                     </button>
                 )}
             </div>
 
-            <nav style={{flex:1, display:'flex', flexDirection:'column', gap:8}}>
-                <div onClick={() => handleNavigation('dashboard')} style={getItemStyle('dashboard')}>
-                    <LayoutDashboard size={18}/> Tableau de Bord
-                </div>
-                
-                <div onClick={() => handleNavigation('planning')} style={getItemStyle('planning')}>
-                    <CalIcon size={18}/> Planning
-                </div>
-                
-                <div onClick={() => handleNavigation('finance')} style={getItemStyle('finance')}>
-                    <Wallet size={18}/> Caisse
-                </div>
-                
-                <div onClick={() => handleNavigation('staff')} style={getItemStyle('staff')}>
-                    <Users size={18}/> Staff
-                </div>
-                
-                <div onClick={() => handleNavigation('clients')} style={getItemStyle('clients')}>
-                    <User size={18}/> Clients
-                </div>
-
-                <div onClick={() => handleNavigation('whatsapp')} style={getItemStyle('whatsapp')}>
-                    <MessageSquare size={18}/> Gestion WhatsApp
-                </div>
-
-                {/* --- NEW SETTINGS TAB --- */}
-                <div onClick={() => handleNavigation('settings')} style={getItemStyle('settings')}>
-                    <SettingsIcon size={18}/> Paramètres
-                </div>
-                <div onClick={() => handleNavigation('stats')} style={getItemStyle('stats')}>
-                <BarChart2 size={18}/> Statistiques
-                </div>
+            <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4, overflowY: 'auto' }}>
+                {navItems.map((item) => {
+                    // Role Check
+                    if (item.minRole === 'superadmin' && role !== 'superadmin') return null;
+                    
+                    const active = viewMode === item.id;
+                    return (
+                        <div 
+                            key={item.id}
+                            onClick={() => { setViewMode(item.id); if(isMobile) closeMobileMenu(); }}
+                            style={{
+                                padding: '12px 16px',
+                                borderRadius: 10,
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 12,
+                                transition: 'all 0.2s ease',
+                                background: active ? 'rgba(239, 68, 68, 0.1)' : 'transparent',
+                                color: active ? '#ef4444' : '#a1a1aa',
+                                fontWeight: active ? '700' : '600',
+                                borderLeft: active ? '3px solid #ef4444' : '3px solid transparent'
+                            }}
+                        >
+                            <item.icon size={18} />
+                            <span style={{ fontSize: 14 }}>{item.label}</span>
+                        </div>
+                    );
+                })}
             </nav>
 
-            {/* Logout Section */}
             <div 
-                onClick={handleLogout} 
+                onClick={setIsLoggedIn}
                 style={{
-                    marginTop:'auto', 
-                    padding:'15px 20px', 
-                    cursor:'pointer', 
-                    color:'#ef4444', 
-                    display:'flex', 
-                    gap:'12px', 
-                    alignItems: 'center', 
-                    fontSize: '14px',
-                    fontWeight: '700',
+                    padding: '15px 16px',
+                    marginTop: '20px',
                     borderTop: '1px solid #1a1a1a',
-                    opacity: 0.8
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 12,
+                    color: '#ef4444',
+                    cursor: 'pointer',
+                    fontWeight: '700',
+                    fontSize: 14
                 }}
-                onMouseOver={(e) => e.currentTarget.style.opacity = 1}
-                onMouseOut={(e) => e.currentTarget.style.opacity = 0.8}
             >
-                <LogOut size={18}/> Déconnexion
+                <LogOut size={18} /> Déconnexion
             </div>
         </div>
     );

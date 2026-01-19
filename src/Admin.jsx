@@ -7,7 +7,7 @@ import Caisse from './Caisse';
 import Clients from './Clients';
 import WhatsAppSettings from './WhatsAppSettings';
 import Settings from './Settings'; 
-import Statistics from './Statistics'; // <--- IMPORTED
+import Statistics from './Statistics'; 
 import { Lock, Mail, Menu } from 'lucide-react';
 
 export default function Admin() {
@@ -15,15 +15,10 @@ export default function Admin() {
     const [viewMode, setViewMode] = useState('planning');
     const [role, setRole] = useState(''); 
     const [currentUser, setCurrentUser] = useState('');
-    
-    // Mobile State
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-    const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+    const [isMobile, setIsMobile] = useState(window.innerWidth <= 1024);
 
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
-
+    // Track responsiveness
     useEffect(() => {
         const savedUser = localStorage.getItem('onhair_session');
         if (savedUser) {
@@ -34,7 +29,7 @@ export default function Admin() {
         }
 
         const handleResize = () => {
-            const mobile = window.innerWidth <= 768;
+            const mobile = window.innerWidth <= 1024;
             setIsMobile(mobile);
             if (!mobile) setIsMobileMenuOpen(false);
         };
@@ -46,62 +41,49 @@ export default function Admin() {
         e.preventDefault();
         const userEmail = email.toLowerCase().trim();
         const userPass = password.trim();
-        
-        let authenticatedUser = null;
+        let auth = null;
 
         if (userEmail === 'onhairmaroc@gmail.com' && userPass === 'onhair2025') {
-            authenticatedUser = { role: 'superadmin', name: 'Direction' };
-        } 
-        else if (userEmail === 'nezhaelghazouani829@gmail.com' && userPass === 'nezha2025') {
-            authenticatedUser = { role: 'admin', name: 'Nezha' };
+            auth = { role: 'superadmin', name: 'Direction' };
+        } else if (userEmail === 'nezhaelghazouani829@gmail.com' && userPass === 'nezha2025') {
+            auth = { role: 'admin', name: 'Nezha' };
         } 
 
-        if (authenticatedUser) {
-            setRole(authenticatedUser.role);
-            setCurrentUser(authenticatedUser.name);
-            setViewMode('planning'); 
+        if (auth) {
+            setRole(auth.role);
+            setCurrentUser(auth.name);
             setIsLoggedIn(true);
-            localStorage.setItem('onhair_session', JSON.stringify(authenticatedUser));
+            localStorage.setItem('onhair_session', JSON.stringify(auth));
         } else {
-            setError("Email ou mot de passe incorrect");
+            setError("Identifiants incorrects");
         }
     };
 
     const handleLogout = () => {
         localStorage.removeItem('onhair_session');
         setIsLoggedIn(false);
-        setRole('');
-        setCurrentUser('');
     };
+
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [error, setError] = useState('');
 
     if (!isLoggedIn) {
         return (
-            <div style={styles.loginContainer}>
+            <div style={styles.loginPage}>
                 <div style={styles.loginCard}>
-                    <h2 style={{textAlign:'center', marginBottom:10, color:'white'}}>OnHair Admin</h2>
-                    <form onSubmit={handleLogin} style={{display:'flex', flexDirection:'column', gap:15}}>
-                        <div style={styles.inputWrapper}>
-                            <Mail size={18} color="#9CA3AF"/>
-                            <input 
-                                type="email" 
-                                placeholder="Email" 
-                                style={styles.input} 
-                                value={email} 
-                                onChange={e => setEmail(e.target.value)}
-                            />
+                    <h2 style={{color:'white', textAlign:'center', marginBottom:25}}>OnHair Admin</h2>
+                    <form onSubmit={handleLogin} style={styles.form}>
+                        <div style={styles.inputBox}>
+                            <Mail size={18} color="#666"/>
+                            <input type="email" placeholder="Email" style={styles.input} value={email} onChange={e=>setEmail(e.target.value)} />
                         </div>
-                        <div style={styles.inputWrapper}>
-                            <Lock size={18} color="#9CA3AF"/>
-                            <input 
-                                type="password" 
-                                placeholder="Mot de passe" 
-                                style={styles.input} 
-                                value={password} 
-                                onChange={e => setPassword(e.target.value)}
-                            />
+                        <div style={styles.inputBox}>
+                            <Lock size={18} color="#666"/>
+                            <input type="password" placeholder="Mot de passe" style={styles.input} value={password} onChange={e=>setPassword(e.target.value)} />
                         </div>
-                        {error && <div style={{color:'#ef4444', fontSize:14, textAlign:'center'}}>{error}</div>}
-                        <button type="submit" style={styles.loginBtn}>Se Connecter</button>
+                        {error && <p style={{color:'#ef4444', fontSize:13, textAlign:'center'}}>{error}</p>}
+                        <button type="submit" style={styles.loginBtn}>Connexion</button>
                     </form>
                 </div>
             </div>
@@ -109,66 +91,85 @@ export default function Admin() {
     }
 
     return (
-        <div className="admin-container">
+        <div style={styles.adminLayout}>
             <style>{`
-                * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-                html, body { overflow-x: hidden; width: 100%; position: relative; }
-                .admin-container { display: flex; height: 100vh; width: 100vw; background: black; color: white; overflow: hidden; }
-                .sidebar-wrapper { width: 260px; background: #050505; flex-shrink: 0; }
-                .mobile-header { display: none; }
-                @media (max-width: 768px) {
-                    .admin-container { flex-direction: column; }
-                    .sidebar-wrapper { position: fixed; top: 0; bottom: 0; width: 280px; left: -300px; transition: left 0.3s ease; z-index: 5000; box-shadow: 5px 0 15px rgba(0,0,0,0.5); }
-                    .sidebar-wrapper.open { left: 0; }
-                    .mobile-header { display: flex; align-items: center; justify-content: space-between; height: 60px; padding: 0 20px; background: #050505; border-bottom: 1px solid #374151; flex-shrink: 0; }
-                    .menu-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 4000; }
+                .sidebar-container {
+                    width: 260px;
+                    height: 100vh;
+                    background: #050505;
+                    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                    z-index: 1000;
+                    flex-shrink: 0;
+                }
+                @media (max-width: 1024px) {
+                    .sidebar-container {
+                        position: fixed;
+                        top: 0;
+                        left: 0;
+                        transform: translateX(${isMobileMenuOpen ? '0' : '-101%'});
+                    }
+                }
+                .main-content {
+                    flex: 1;
+                    height: 100vh;
+                    overflow-y: auto;
+                    background: #000;
+                    display: flex;
+                    flex-direction: column;
+                }
+                .overlay {
+                    position: fixed;
+                    inset: 0;
+                    background: rgba(0,0,0,0.8);
+                    z-index: 999;
+                    backdrop-filter: blur(4px);
                 }
             `}</style>
 
-            {isMobile && isMobileMenuOpen && (
-                <div className="menu-overlay" onClick={() => setIsMobileMenuOpen(false)}></div>
-            )}
+            {isMobile && isMobileMenuOpen && <div className="overlay" onClick={() => setIsMobileMenuOpen(false)} />}
 
-            <div className={`sidebar-wrapper ${isMobileMenuOpen ? 'open' : ''}`}>
+            <div className="sidebar-container">
                 <Sidebar 
                     viewMode={viewMode} 
                     setViewMode={setViewMode} 
                     setIsLoggedIn={handleLogout}
-                    role={role}
-                    currentUser={currentUser} 
                     isMobile={isMobile}
                     closeMobileMenu={() => setIsMobileMenuOpen(false)}
+                    role={role}
                 />
             </div>
 
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
-                <div className="mobile-header">
-                    <button onClick={() => setIsMobileMenuOpen(true)} style={{background:'transparent', border:'none', color:'white'}}>
-                        <Menu size={28} />
-                    </button>
-                    <span style={{fontWeight:'bold', fontSize:18}}>OnHair</span>
-                    <div style={{width:28}}></div>
-                </div>
+            <div className="main-content">
+                {isMobile && (
+                    <div style={styles.mobileHeader}>
+                        <button onClick={() => setIsMobileMenuOpen(true)} style={styles.menuBtn}>
+                            <Menu size={28} color="white" />
+                        </button>
+                        <span style={{fontWeight:'700', fontSize:18}}>OnHair</span>
+                        <div style={{width:28}}></div>
+                    </div>
+                )}
 
-                <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', position: 'relative' }}>
-                    {viewMode === 'dashboard' && role === 'superadmin' && <Dashboard />}
-                    {viewMode === 'finance' && role === 'superadmin' && <Caisse />}
-                    {viewMode === 'staff' && role === 'superadmin' && <Staff />}
-                    {viewMode === 'clients' && role === 'superadmin' && <Clients />}
-                    {viewMode === 'whatsapp' && role === 'superadmin' && <WhatsAppSettings />}
-                    {viewMode === 'settings' && role === 'superadmin' && <Settings />}
-                    {viewMode === 'stats' && role === 'superadmin' && <Statistics />} {/* <--- ADDED LOGIC */}
+                <div style={{ padding: isMobile ? '15px' : '30px', flex: 1 }}>
+                    {viewMode === 'planning' && <Planning role={role} />}
                     
-                    {viewMode === 'planning' && (
-                        <Planning role={role} onBack={() => setViewMode('dashboard')} />
-                    )}
-                    
-                    {/* Access Denied logic for Nezha (admin role) */}
-                    {viewMode !== 'planning' && role === 'admin' && (
-                        <div style={{padding:50, textAlign:'center', color: '#666'}}>
-                            <h2>Accès Réservé</h2>
-                            <p>Vous n'avez pas les permissions pour consulter cette page.</p>
-                        </div>
+                    {role === 'superadmin' ? (
+                        <>
+                            {viewMode === 'dashboard' && <Dashboard />}
+                            {viewMode === 'finance' && <Caisse />}
+                            {viewMode === 'staff' && <Staff />}
+                            {viewMode === 'clients' && <Clients />}
+                            {viewMode === 'whatsapp' && <WhatsAppSettings />}
+                            {viewMode === 'stats' && <Statistics />}
+                            {viewMode === 'settings' && <Settings />}
+                        </>
+                    ) : (
+                        viewMode !== 'planning' && (
+                            <div style={{textAlign:'center', marginTop:100}}>
+                                <h3>Accès non autorisé</h3>
+                                <p style={{color:'#666'}}>Vous n'avez pas les permissions pour voir cette page.</p>
+                            </div>
+                        )
                     )}
                 </div>
             </div>
@@ -177,9 +178,13 @@ export default function Admin() {
 }
 
 const styles = {
-    loginContainer: { height:'100vh', background:'#000', display:'flex', alignItems:'center', justifyContent:'center' },
-    loginCard: { background:'#18181b', padding:40, borderRadius:16, width:350, border:'1px solid #333' },
-    inputWrapper: { background:'#000', border:'1px solid #333', borderRadius:8, padding:'12px 15px', display:'flex', alignItems:'center', gap:10 },
-    input: { background:'transparent', border:'none', color:'white', outline:'none', width:'100%', fontSize: '16px' },
-    loginBtn: { background: '#ef4444', color:'white', border:'none', padding:12, borderRadius:8, width:'100%', marginTop:10, fontWeight:'bold', cursor: 'pointer' }
+    adminLayout: { display: 'flex', width: '100vw', height: '100vh', background: '#000', color: 'white', overflow: 'hidden' },
+    mobileHeader: { height: 60, background: '#050505', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 15px', borderBottom: '1px solid #1a1a1a', flexShrink: 0 },
+    menuBtn: { background: 'none', border: 'none', cursor: 'pointer', padding: 5 },
+    loginPage: { height: '100vh', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+    loginCard: { background: '#0a0a0a', padding: 40, borderRadius: 15, width: '90%', maxWidth: 360, border: '1px solid #1a1a1a' },
+    form: { display: 'flex', flexDirection: 'column', gap: 15 },
+    inputBox: { background: '#000', border: '1px solid #333', borderRadius: 8, padding: '12px 15px', display: 'flex', alignItems: 'center', gap: 10 },
+    input: { background: 'none', border: 'none', color: 'white', outline: 'none', width: '100%', fontSize: 16 },
+    loginBtn: { background: '#ef4444', color: 'white', border: 'none', padding: 12, borderRadius: 8, fontWeight: '700', cursor: 'pointer', marginTop: 10 }
 };
